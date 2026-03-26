@@ -1,0 +1,71 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<h2 class="mt-4">Business Intelligence Dashboard</h2>
+
+<div class="row mt-4">
+
+<div class="col-md-3">
+<div class="card p-3 shadow bg-success text-white">
+<h5>Total Recommendations</h5>
+<h2>{{total}}</h2>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card p-3 shadow bg-primary text-white">
+<h5>Average CO₂</h5>
+<h2>{{avg_co2}}</h2>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card p-3 shadow bg-warning text-dark">
+<h5>Average Cost</h5>
+<h2>{{avg_cost}}</h2>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card p-3 shadow bg-dark text-white">
+<h5>CO₂ Saved</h5>
+<h2>{{co2_saved}}%</h2>
+</div>
+</div>
+
+</div>
+
+<div class="row mt-4">
+
+<div class="col-md-6">
+<div class="card p-3 shadow bg-secondary text-white">
+<h5>Cost Saved</h5>
+<h2>{{cost_saved}}%</h2>
+</div>
+</div>
+
+</div>
+
+<h3 class="mt-5">Material Usage Chart</h3>
+
+<canvas id="myChart"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+const ctx = document.getElementById('myChart');
+
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: {{labels|tojson}},
+        datasets: [{
+            label: 'Material Usage',
+            data: {{values|tojson}},
+            borderWidth: 1
+        }]
+    }
+});
+</script>
+
+{% endblock %}
