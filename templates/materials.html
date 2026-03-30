@@ -1,7 +1,61 @@
 {% extends "layout.html" %}
 {% block content %}
+<section class="panel-page">
+  <div class="section-card">
+    <div class="materials-header">
+      <div>
+        <h3>Materials Database</h3>
+        <p>Explore our comprehensive database of eco-friendly packaging materials</p>
+      </div>
+    </div>
 
-<h2 class="mt-4">Packaging Materials Info</h2>
-<p>Here we will show eco friendly material details.</p>
+    <div class="materials-grid">
+      {% for material in materials %}
+      <article class="material-card">
+        <div class="material-top">
+          <div class="material-icon">{{ material.icon|safe }}</div>
+          <div class="type-pill">{{ material.type }}</div>
+        </div>
+        <h4>{{ material.name }}</h4>
+        <p>{{ material.description }}</p>
 
+        <div class="metric-bar">
+          <div class="metric-row"><span>Strength</span><span>{{ material.strength }}%</span></div>
+          <div class="bar dark"><span style="width:{{ material.strength }}%"></span></div>
+        </div>
+
+        <div class="metric-bar">
+          <div class="metric-row"><span>Biodegradability</span><span>{{ material.biodegradability }}%</span></div>
+          <div class="bar green"><span style="width:{{ material.biodegradability }}%"></span></div>
+        </div>
+
+        <div class="metric-bar">
+          <div class="metric-row"><span>Recyclability</span><span>{{ material.recyclability }}%</span></div>
+          <div class="bar blue"><span style="width:{{ material.recyclability }}%"></span></div>
+        </div>
+
+        <div class="dual-metrics">
+          <div>
+            <span>CO2 Score</span>
+            <strong>{{ material.co2 }}</strong>
+          </div>
+          <div>
+            <span>Cost</span>
+            <strong class="cost-value">{{ material.cost }}</strong>
+          </div>
+        </div>
+
+        <div>
+          <span class="metric-row">Best for:</span>
+          <div class="tag-list">
+            {% for tag in material.best_for %}
+            <span>{{ tag }}</span>
+            {% endfor %}
+          </div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
 {% endblock %}

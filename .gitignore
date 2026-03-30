@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Flask
+instance/
+*.db
+
+# Environment and secrets
+.env
+.env.*
+
+# IDE and editor files
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Build and packaging
+build/
+dist/
+*.egg-info/
+
+# Logs
+*.log
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Temporary files
+tempCodeRunnerFile.py

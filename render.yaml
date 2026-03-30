@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: ecopackai
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: DB_ENGINE
+        value: mysql
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: 3306
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_NAME
+        value: ecopackai_db
+      - key: DB_SSL_DISABLED
+        value: "false"
+      - key: DB_SSL_CA
+        sync: false
+      - key: DB_SSL_VERIFY_CERT
+        value: "false"
+      - key: DB_SSL_VERIFY_IDENTITY
+        value: "false"
+      - key: DB_SSL_MODE
+        value: prefer
+      - key: SECRET_KEY
+        sync: false

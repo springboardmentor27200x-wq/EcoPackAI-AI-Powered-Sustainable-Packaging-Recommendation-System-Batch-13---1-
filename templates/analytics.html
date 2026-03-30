@@ -1,71 +1,128 @@
 {% extends "layout.html" %}
 {% block content %}
+<section class="panel-page">
+  <div class="section-card">
+    <div class="section-heading">
+      <h3>BI Analytics Dashboard</h3>
+      <p>Track your sustainability metrics and environmental impact</p>
+    </div>
+    <div class="section-actions">
+      <a class="secondary-button" href="{{ url_for('export_analytics_pdf') }}">Export PDF Report</a>
+      <a class="secondary-button" href="{{ url_for('export_analytics_excel') }}">Export Excel Report</a>
+    </div>
 
-<h2 class="mt-4">Business Intelligence Dashboard</h2>
+    <div class="stats-grid">
+      <article class="stat-card">
+        <div class="stat-icon mint">&uarr;</div>
+        <div class="stat-delta positive">+12%</div>
+        <strong>{{ total }}</strong>
+        <span>Total Recommendations</span>
+      </article>
+      <article class="stat-card">
+        <div class="stat-icon blue">~</div>
+        <div class="stat-delta negative">-18%</div>
+        <strong>{{ avg_co2 }} kg</strong>
+        <span>Average CO2</span>
+      </article>
+      <article class="stat-card">
+        <div class="stat-icon violet">$</div>
+        <div class="stat-delta positive">+8%</div>
+        <strong>${{ avg_cost }}</strong>
+        <span>Average Cost</span>
+      </article>
+      <article class="stat-card">
+        <div class="stat-icon amber">*</div>
+        <div class="stat-delta warm">{{ co2_saved }}%</div>
+        <strong>{{ cost_saved }}%</strong>
+        <span>Impact Saved</span>
+      </article>
+    </div>
 
-<div class="row mt-4">
+    <div class="chart-grid">
+      <article class="chart-card">
+        <h4>CO2 Reduction Trend</h4>
+        <div id="co2-trend-chart" class="plotly-chart" aria-label="CO2 reduction trend chart"></div>
+      </article>
 
-<div class="col-md-3">
-<div class="card p-3 shadow bg-success text-white">
-<h5>Total Recommendations</h5>
-<h2>{{total}}</h2>
-</div>
-</div>
+      <article class="chart-card">
+        <h4>Material Distribution</h4>
+        <div id="material-distribution-chart" class="plotly-chart" aria-label="Material distribution chart"></div>
+      </article>
+    </div>
 
-<div class="col-md-3">
-<div class="card p-3 shadow bg-primary text-white">
-<h5>Average CO₂</h5>
-<h2>{{avg_co2}}</h2>
-</div>
-</div>
+    <article class="chart-card chart-card-wide">
+      <h4>Recent Sustainability Records</h4>
+      <div id="recent-history-chart" class="plotly-chart plotly-chart-short" aria-label="Recent sustainability records chart"></div>
+    </article>
+  </div>
+</section>
 
-<div class="col-md-3">
-<div class="card p-3 shadow bg-warning text-dark">
-<h5>Average Cost</h5>
-<h2>{{avg_cost}}</h2>
-</div>
-</div>
-
-<div class="col-md-3">
-<div class="card p-3 shadow bg-dark text-white">
-<h5>CO₂ Saved</h5>
-<h2>{{co2_saved}}%</h2>
-</div>
-</div>
-
-</div>
-
-<div class="row mt-4">
-
-<div class="col-md-6">
-<div class="card p-3 shadow bg-secondary text-white">
-<h5>Cost Saved</h5>
-<h2>{{cost_saved}}%</h2>
-</div>
-</div>
-
-</div>
-
-<h3 class="mt-5">Material Usage Chart</h3>
-
-<canvas id="myChart"></canvas>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
 <script>
-const ctx = document.getElementById('myChart');
+  const trendLabels = {{ trend_labels|tojson }};
+  const trendValues = {{ trend_values|tojson }};
+  const materialLabels = {{ labels|tojson }};
+  const materialValues = {{ values|tojson }};
+  const recentHistory = {{ recent_history|tojson }};
 
-new Chart(ctx, {
+  Plotly.newPlot('co2-trend-chart', [{
+    x: trendLabels,
+    y: trendValues,
+    type: 'scatter',
+    mode: 'lines+markers',
+    line: { color: '#28c85d', width: 4, shape: 'spline' },
+    marker: { size: 10, color: '#155e42', line: { color: '#eef8f1', width: 3 } },
+    fill: 'tozeroy',
+    fillcolor: 'rgba(40, 200, 93, 0.12)',
+    hovertemplate: '%{x}<br>%{y} recommendations<extra></extra>'
+  }], {
+    margin: { l: 42, r: 18, t: 10, b: 40 },
+    paper_bgcolor: 'rgba(0,0,0,0)',
+    plot_bgcolor: 'rgba(0,0,0,0)',
+    xaxis: { showgrid: false, zeroline: false },
+    yaxis: { gridcolor: '#e7eee9', zeroline: false, title: 'Recommendations' },
+    font: { family: 'Manrope, sans-serif', color: '#5f6f66' }
+  }, { responsive: true, displayModeBar: false });
+
+  Plotly.newPlot('material-distribution-chart', [{
+    labels: materialLabels,
+    values: materialValues,
+    type: 'pie',
+    hole: 0.58,
+    marker: { colors: ['#155e42', '#28c85d', '#4380e8', '#8355e8', '#f7a20a', '#9fb0a5'] },
+    textinfo: 'label+percent',
+    hovertemplate: '%{label}<br>%{value} recommendations<extra></extra>'
+  }], {
+    margin: { l: 20, r: 20, t: 10, b: 10 },
+    paper_bgcolor: 'rgba(0,0,0,0)',
+    plot_bgcolor: 'rgba(0,0,0,0)',
+    showlegend: false,
+    font: { family: 'Manrope, sans-serif', color: '#5f6f66' }
+  }, { responsive: true, displayModeBar: false });
+
+  Plotly.newPlot('recent-history-chart', [{
+    x: recentHistory.map(item => item.material),
+    y: recentHistory.map(item => item.co2),
     type: 'bar',
-    data: {
-        labels: {{labels|tojson}},
-        datasets: [{
-            label: 'Material Usage',
-            data: {{values|tojson}},
-            borderWidth: 1
-        }]
-    }
-});
+    name: 'CO2',
+    marker: { color: '#1f8f5d' },
+    hovertemplate: '%{x}<br>CO2: %{y} kg<extra></extra>'
+  }, {
+    x: recentHistory.map(item => item.material),
+    y: recentHistory.map(item => item.cost),
+    type: 'bar',
+    name: 'Cost',
+    marker: { color: '#4a87ea' },
+    hovertemplate: '%{x}<br>Cost: $%{y}<extra></extra>'
+  }], {
+    barmode: 'group',
+    margin: { l: 42, r: 18, t: 10, b: 70 },
+    paper_bgcolor: 'rgba(0,0,0,0)',
+    plot_bgcolor: 'rgba(0,0,0,0)',
+    xaxis: { tickangle: -18, showgrid: false },
+    yaxis: { gridcolor: '#e7eee9', zeroline: false },
+    font: { family: 'Manrope, sans-serif', color: '#5f6f66' },
+    legend: { orientation: 'h', x: 0, y: 1.15 }
+  }, { responsive: true, displayModeBar: false });
 </script>
-
 {% endblock %}

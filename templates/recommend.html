@@ -1,86 +1,92 @@
 {% extends "layout.html" %}
 {% block content %}
+<section class="panel-page narrow-page">
+  <div class="section-card section-form">
+    <div class="section-heading">
+      <h3>Get Recommendation</h3>
+      <p>Use your product details to generate a packaging suggestion tuned for cost and sustainability.</p>
+    </div>
 
-<h2 class="mb-4">Sustainable Material Recommendation</h2>
+    <form method="POST" action="{{ url_for('recommend') }}" class="recommendation-form">
+      <div class="field full">
+        <label for="product_name">Product Name</label>
+        <input id="product_name" name="product_name" type="text" placeholder="e.g., Smartphone, Organic Coffee, Face Cream">
+      </div>
 
-<form method="POST" action="/recommend">
+      <div class="field">
+        <label for="category">Product Category</label>
+        <select id="category" name="category">
+          <option>Electronics</option>
+          <option>Food</option>
+          <option>Cosmetics</option>
+          <option>Clothing</option>
+        </select>
+      </div>
 
-<div class="row">
+      <div class="field">
+        <label for="weight">Product Weight (kg)</label>
+        <input id="weight" type="number" step="0.1" min="0.1" name="weight" value="0.5" required>
+      </div>
 
-<div class="col-md-6 mb-3">
-<label>Product Name</label>
-<input type="text" name="product_name" class="form-control" placeholder="e.g., Smartphone, Organic Coffee">
-</div>
+      <div class="field">
+        <label for="fragility">Fragility Level</label>
+        <select id="fragility" name="fragility">
+          <option value="2">Low</option>
+          <option value="5" selected>Medium</option>
+          <option value="9">High</option>
+        </select>
+      </div>
 
-<div class="col-md-6 mb-3">
-<label>Product Category</label>
-<select name="category" class="form-control">
-<option>Electronics</option>
-<option>Food</option>
-<option>Cosmetics</option>
-<option>Clothing</option>
-</select>
-</div>
+      <div class="field">
+        <label for="shipping">Shipping Type</label>
+        <select id="shipping" name="shipping">
+          <option>Standard</option>
+          <option selected>Express</option>
+          <option>International</option>
+        </select>
+      </div>
 
-<div class="col-md-6 mb-3">
-<label>Product Weight (kg)</label>
-<input type="number" step="0.1" name="weight" class="form-control" required>
-</div>
+      <div class="field full">
+        <label for="priority">Priority Balance</label>
+        <div class="slider-row">
+          <span>Cost</span>
+          <input id="priority" type="range" min="1" max="10" name="priority" value="5">
+          <span>Eco</span>
+        </div>
+      </div>
 
-<div class="col-md-6 mb-3">
-<label>Fragility Level</label>
-<select name="fragility" class="form-control">
-<option value="2">Low</option>
-<option value="5">Medium</option>
-<option value="9">High</option>
-</select>
-</div>
+      <button class="primary-button" type="submit">Get Recommendation</button>
+    </form>
 
-<div class="col-md-6 mb-3">
-<label>Shipping Type</label>
-<select name="shipping" class="form-control">
-<option>Standard</option>
-<option>Express</option>
-<option>International</option>
-</select>
-</div>
-
-<div class="col-md-6 mb-3">
-<label>Priority Balance</label>
-<input type="range" min="1" max="10" name="priority" class="form-range">
-<div class="d-flex justify-content-between">
-<span>💰 Cost</span>
-<span>🌱 Eco</span>
-</div>
-</div>
-
-</div>
-
-<button class="btn btn-success w-100 mt-3">Get Recommendation</button>
-
-</form>
-
-{% if result %}
-
-<h3 class="mt-5">Top Recommended Materials</h3>
-
-<table class="table table-dark mt-3">
-<tr>
-<th>Material</th>
-<th>Cost Index</th>
-<th>CO₂ Score</th>
-<th>Rank Score</th>
-</tr>
-
-<tr>
-<td>{{result.material}}</td>
-<td>{{result.cost}}</td>
-<td>{{result.co2}}</td>
-<td>1</td>
-</tr>
-
-</table>
-
-{% endif %}
-
+    {% if result %}
+    <div class="result-card">
+      <div class="result-top">
+        <div>
+          <h4>{{ result.material }}</h4>
+          <p>Recommended for your selected weight, fragility, and sustainability priority.</p>
+        </div>
+        <div class="score-pill">{{ result.rank_score }} rank score</div>
+      </div>
+      <div class="result-grid">
+        <div class="mini-metric">
+          <span>Estimated Cost</span>
+          <strong>${{ result.cost }}</strong>
+        </div>
+        <div class="mini-metric">
+          <span>CO2 Impact</span>
+          <strong>{{ result.co2 }}</strong>
+        </div>
+        <div class="mini-metric">
+          <span>Priority</span>
+          <strong>{{ result.priority }}</strong>
+        </div>
+        <div class="mini-metric">
+          <span>Shipping</span>
+          <strong>{{ result.shipping }}</strong>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</section>
 {% endblock %}
