@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoPackAI - BI Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        body { background-color: #f4f7f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .chart-container { position: relative; height: 300px; width: 100%; }
+        .card { border-radius: 12px; border: none; transition: 0.3s; }
+        .card:hover { box-shadow: 0 8px 16px rgba(0,0,0,0.1) !important; }
+        .btn-success { background-color: #27ae60; }
+        .table-dark { background-color: #2c3e50; }
+    </style>
+</head>
+<body class="container py-5">
+
+    <div class="row align-items-center mb-4">
+        <div class="col-md-7">
+            <h1 class="fw-bold text-success">EcoPackAI <span class="text-secondary">Analytics</span></h1>
+            <p class="text-muted">Sustainable Material Optimization & Automated Reporting</p>
+        </div>
+        <div class="col-md-5 text-end">
+            <button class="btn btn-outline-primary shadow-sm me-2" onclick="exportToCSV()">CSV Export</button>
+            <button class="btn btn-danger shadow-sm" onclick="exportToPDF()">Download PDF Report</button>
+        </div>
+    </div>
+
+    <div class="card p-4 shadow-sm mb-4">
+        <h5 class="mb-3 fw-bold">Product Configuration</h5>
+        <div class="row g-3">
+            <div class="col-md-4"><input id="product_name" class="form-control" placeholder="Product Name (e.g. Laptop Box)"></div>
+            <div class="col-md-4"><input id="weight" class="form-control" type="number" placeholder="Weight (kg)"></div>
+            <div class="col-md-4">
+                <select id="industry" class="form-select">
+                    <option value="packaging">Packaging</option>
+                    <option value="electronics">Electronics</option>
+                    <option value="food">Food</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <select id="fragility" class="form-select">
+                    <option value="low">Low Fragility</option>
+                    <option value="medium">Medium Fragility</option>
+                    <option value="high">High Fragility</option>
+                </select>
+            </div>
+            <div class="col-md-4"><input id="shipping" class="form-control" placeholder="Shipping (Air/Sea)"></div>
+            <div class="col-md-4"><input id="safety" class="form-control" placeholder="Safety Req (e.g. Fireproof)"></div>
+            <div class="col-12">
+                <button class="btn btn-success w-100 fw-bold py-2" onclick="getRecommendation()">GENERATE AI INSIGHTS</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card p-3 shadow-sm h-100">
+                <h6 class="fw-bold text-center">Predicted Cost Analysis ($)</h6>
+                <div class="chart-container"><canvas id="costChart"></canvas></div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="card p-3 shadow-sm h-100">
+                <h6 class="fw-bold text-center">CO2 Footprint Comparison (kg)</h6>
+                <div class="chart-container"><canvas id="co2Chart"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mt-2">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 fw-bold">Top Ranked Sustainable Materials</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Material</th>
+                        <th>Predicted Cost</th>
+                        <th>CO2 Impact</th>
+                        <th>Sustainability Rank</th>
+                    </tr>
+                </thead>
+                <tbody id="result_table">
+                    <tr><td colspan="4" class="text-center text-muted">No data generated yet.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="/static/js/script.js"></script>
+</body>
+</html>
