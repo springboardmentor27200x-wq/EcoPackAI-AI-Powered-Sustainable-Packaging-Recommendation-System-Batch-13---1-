@@ -3,17 +3,18 @@
 <section class="hero-page">
   <div class="hero">
     <div class="hero-copy">
-      <div class="eyebrow">Smarter sustainable decisions for every shipment</div>
+      <span class="hero-eyebrow">Smarter sustainable decisions for every shipment</span>
       <h2>EcoPackAI</h2>
-      <p>
-        Compare eco-friendly packaging materials, evaluate CO2 impact and cost,
-        and get AI-driven recommendations based on product characteristics.
+      <p class="hero-description">
+        Compare eco-friendly packaging materials, evaluate CO2 impact and cost, and get AI-driven recommendations based on product characteristics.
       </p>
-      <a class="cta-large link-button" href="{{ url_for('recommend') }}">Get Recommendation</a>
+      <div class="hero-cta-shell">
+        <a class="hero-cta link-button" href="{{ url_for('recommend') }}">Get Recommendation</a>
+      </div>
     </div>
 
     <div class="hero-visual card">
-      <svg viewBox="0 0 520 420" aria-hidden="true">
+      <svg class="hero-cube-scene" viewBox="0 0 520 420" aria-hidden="true">
         <defs>
           <linearGradient id="cubeSide" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stop-color="#1a7145"/>
@@ -24,20 +25,27 @@
             <stop offset="100%" stop-color="#18663f"/>
           </linearGradient>
         </defs>
-        <circle cx="85" cy="90" r="8" fill="#8ae8b1"/>
-        <circle cx="458" cy="120" r="10" fill="#58d784"/>
-        <circle cx="130" cy="288" r="7" fill="#43c86f"/>
-        <circle cx="390" cy="310" r="8" fill="#d8e7df"/>
-        <path d="M268 57l147 84-147 81-147-81 147-84z" fill="url(#cubeTop)"/>
-        <path d="M121 141l147 81v152L121 292V141z" fill="#17643c"/>
-        <path d="M415 141l-147 81v152l147-82V141z" fill="url(#cubeSide)"/>
-        <path d="M121 141l147 81 147-81" fill="none" stroke="#eef7f1" stroke-width="4" stroke-linecap="round" stroke-dasharray="10 10"/>
-        <path d="M268 57v317" fill="none" stroke="#eef7f1" stroke-width="4" stroke-linecap="round" stroke-dasharray="10 10"/>
-        <circle cx="268" cy="220" r="42" fill="#ffffff22"/>
-        <path d="M268 185l31 18v34l-31 19-31-19v-34l31-18z" fill="none" stroke="#f6fbf7" stroke-width="4"/>
-        <path d="M237 220h62M268 185v71M245 201l23 19 23-19" fill="none" stroke="#f6fbf7" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle class="hero-dot dot-1" cx="85" cy="90" r="8" fill="#8ae8b1"/>
+        <circle class="hero-dot dot-2" cx="458" cy="120" r="10" fill="#58d784"/>
+        <circle class="hero-dot dot-3" cx="130" cy="288" r="7" fill="#43c86f"/>
+        <circle class="hero-dot dot-4" cx="390" cy="310" r="8" fill="#d8e7df"/>
+        <g class="hero-cube">
+          <path d="M268 57l147 84-147 81-147-81 147-84z" fill="url(#cubeTop)"/>
+          <path d="M121 141l147 81v152L121 292V141z" fill="#17643c"/>
+          <path d="M415 141l-147 81v152l147-82V141z" fill="url(#cubeSide)"/>
+          <path d="M121 141l147 81 147-81" fill="none" stroke="#eef7f1" stroke-width="4" stroke-linecap="round" stroke-dasharray="10 10"/>
+          <path d="M268 57v317" fill="none" stroke="#eef7f1" stroke-width="4" stroke-linecap="round" stroke-dasharray="10 10"/>
+          <circle cx="268" cy="220" r="42" fill="#ffffff22"/>
+          <path d="M268 185l31 18v34l-31 19-31-19v-34l31-18z" fill="none" stroke="#f6fbf7" stroke-width="4"/>
+          <path d="M237 220h62M268 185v71M245 201l23 19 23-19" fill="none" stroke="#f6fbf7" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>
       </svg>
     </div>
+  </div>
+  <div class="hero-wave" aria-hidden="true">
+    <svg viewBox="0 0 1440 180" preserveAspectRatio="none">
+      <path d="M0 120C160 160 320 165 480 145C640 125 800 80 960 80C1120 80 1280 125 1440 110V180H0Z" fill="#f1f3ef"></path>
+    </svg>
   </div>
 </section>
 {% endblock %}

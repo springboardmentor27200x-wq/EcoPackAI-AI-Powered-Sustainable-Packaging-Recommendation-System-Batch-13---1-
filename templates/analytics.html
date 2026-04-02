@@ -52,8 +52,45 @@
 
     <article class="chart-card chart-card-wide">
       <h4>Recent Sustainability Records</h4>
-      <div id="recent-history-chart" class="plotly-chart plotly-chart-short" aria-label="Recent sustainability records chart"></div>
+      <div class="mini-chart-grid">
+        <div>
+          <h5 class="mini-chart-title">Recent CO2 by Material</h5>
+          <div id="recent-co2-chart" class="plotly-chart plotly-chart-short" aria-label="Recent CO2 chart"></div>
+        </div>
+        <div>
+          <h5 class="mini-chart-title">Recent Cost by Material</h5>
+          <div id="recent-cost-chart" class="plotly-chart plotly-chart-short" aria-label="Recent cost chart"></div>
+        </div>
+      </div>
     </article>
+
+    <footer class="analytics-footer">
+      <div class="analytics-footer-brand">
+        <div class="analytics-footer-mark">✦</div>
+        <div>
+          <h5>EcoPackAI</h5>
+          <p>AI-Powered Sustainable Packaging Recommendation System. Making data-driven decisions for greener supply chains.</p>
+        </div>
+      </div>
+      <div>
+        <h6>Modules</h6>
+        <ul>
+          <li>Data Management</li>
+          <li>ML Models</li>
+          <li>Flask API</li>
+          <li>BI Dashboard</li>
+        </ul>
+      </div>
+      <div>
+        <h6>Technologies</h6>
+        <ul>
+          <li>Python / Flask</li>
+          <li>MySQL / PostgreSQL Ready</li>
+          <li>Random Forest / XGBoost</li>
+          <li>Plotly / Bootstrap-style UI</li>
+        </ul>
+      </div>
+    </footer>
   </div>
 </section>
 
@@ -74,13 +111,13 @@
     marker: { size: 10, color: '#155e42', line: { color: '#eef8f1', width: 3 } },
     fill: 'tozeroy',
     fillcolor: 'rgba(40, 200, 93, 0.12)',
-    hovertemplate: '%{x}<br>%{y} recommendations<extra></extra>'
+    hovertemplate: '%{x}<br>CO2 reduction: %{y}%<extra></extra>'
   }], {
     margin: { l: 42, r: 18, t: 10, b: 40 },
     paper_bgcolor: 'rgba(0,0,0,0)',
     plot_bgcolor: 'rgba(0,0,0,0)',
     xaxis: { showgrid: false, zeroline: false },
-    yaxis: { gridcolor: '#e7eee9', zeroline: false, title: 'Recommendations' },
+    yaxis: { gridcolor: '#e7eee9', zeroline: false, title: 'CO2 Reduction %' },
     font: { family: 'Manrope, sans-serif', color: '#5f6f66' }
   }, { responsive: true, displayModeBar: false });
 
@@ -100,29 +137,38 @@
     font: { family: 'Manrope, sans-serif', color: '#5f6f66' }
   }, { responsive: true, displayModeBar: false });
 
-  Plotly.newPlot('recent-history-chart', [{
+  Plotly.newPlot('recent-co2-chart', [{
     x: recentHistory.map(item => item.material),
     y: recentHistory.map(item => item.co2),
     type: 'bar',
-    name: 'CO2',
-    marker: { color: '#1f8f5d' },
+    marker: { color: '#1f8f5d', opacity: 0.9 },
+    text: recentHistory.map(item => `${item.co2} kg`),
+    textposition: 'outside',
     hovertemplate: '%{x}<br>CO2: %{y} kg<extra></extra>'
-  }, {
-    x: recentHistory.map(item => item.material),
-    y: recentHistory.map(item => item.cost),
-    type: 'bar',
-    name: 'Cost',
-    marker: { color: '#4a87ea' },
-    hovertemplate: '%{x}<br>Cost: $%{y}<extra></extra>'
   }], {
-    barmode: 'group',
     margin: { l: 42, r: 18, t: 10, b: 70 },
     paper_bgcolor: 'rgba(0,0,0,0)',
     plot_bgcolor: 'rgba(0,0,0,0)',
     xaxis: { tickangle: -18, showgrid: false },
-    yaxis: { gridcolor: '#e7eee9', zeroline: false },
-    font: { family: 'Manrope, sans-serif', color: '#5f6f66' },
-    legend: { orientation: 'h', x: 0, y: 1.15 }
+    yaxis: { gridcolor: '#e7eee9', zeroline: false, title: 'CO2 (kg)' },
+    font: { family: 'Manrope, sans-serif', color: '#5f6f66' }
+  }, { responsive: true, displayModeBar: false });
+
+  Plotly.newPlot('recent-cost-chart', [{
+    x: recentHistory.map(item => item.material),
+    y: recentHistory.map(item => item.cost),
+    type: 'bar',
+    marker: { color: '#4a87ea', opacity: 0.85 },
+    text: recentHistory.map(item => `$${item.cost}`),
+    textposition: 'outside',
+    hovertemplate: '%{x}<br>Cost: $%{y}<extra></extra>'
+  }], {
+    margin: { l: 42, r: 18, t: 10, b: 70 },
+    paper_bgcolor: 'rgba(0,0,0,0)',
+    plot_bgcolor: 'rgba(0,0,0,0)',
+    xaxis: { tickangle: -18, showgrid: false },
+    yaxis: { gridcolor: '#e7eee9', zeroline: false, title: 'Cost' },
+    font: { family: 'Manrope, sans-serif', color: '#5f6f66' }
   }, { responsive: true, displayModeBar: false });
 </script>
 {% endblock %}

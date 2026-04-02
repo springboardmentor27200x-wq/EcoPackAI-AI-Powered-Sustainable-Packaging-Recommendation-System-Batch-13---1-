@@ -124,6 +124,12 @@ MATERIAL_ICONS = {
 FRAGILITY_MAP = {"low": 2.0, "medium": 5.0, "high": 9.0}
 STRENGTH_MAP = {"low": 3.0, "medium": 6.0, "high": 9.0}
 SHIPPING_MAP = {"standard": 1.0, "protective": 1.1, "express": 1.15, "international": 1.25}
+DISPLAY_NAME_MAP = {
+    "carton": "Corrugated Cardboard",
+    "vidrio": "Glass Packaging",
+    "plastico": "Bioplastic",
+    "metal": "Metal Packaging",
+}
 
 
 def login_required(view_func):
@@ -197,7 +203,8 @@ def get_db_connection():
                 config["ssl_verify_identity"] = True
 
         return mysql.connector.connect(**config)
-    except Exception:
+    except Exception as error:
+        print(f"[EcoPackAI][DB] Connection failed: {error}", file=sys.stderr)
         return None
 
 
@@ -231,12 +238,25 @@ def material_icon(material_type):
     return MATERIAL_ICONS.get((material_type or "").lower(), "&#127795;")
 
 
+def display_material_name(name):
+    key = (name or "").strip().lower()
+    return DISPLAY_NAME_MAP.get(key, name)
+
+
 def infer_material_type(name, material_type):
     value = (material_type or "").strip()
     if value:
         return value.title()
 
     lowered = (name or "").lower()
+    if "carton" in lowered:
+        return "Paper"
+    if "plastico" in lowered or "plastic" in lowered:
+        return "Bioplastic"
+    if "vidrio" in lowered:
+        return "Glass"
+    if "metal" in lowered:
+        return "Metal"
     if any(term in lowered for term in ["paper", "cardboard", "pulp"]):
         return "Paper"
     if any(term in lowered for term in ["plastic", "pla", "foam"]):
@@ -290,6 +310,22 @@ def category_tags(category):
     return mapping.get(value, [category.title() if category else "General", "Electronics", "Food"])
 
 
+def best_for_tags(material_name, material_type):
+    lowered = (material_name or "").strip().lower()
+    if "carton" in lowered:
+        return ["Electronics", "Furniture", "Toys", "Food", "Home Appliances"]
+    if "plastico" in lowered or "plastic" in lowered:
+        return ["Food", "Cosmetics", "Pharma"]
+    if "vidrio" in lowered:
+        return ["Cosmetics", "Food", "Pharma"]
+    if "metal" in lowered:
+        return ["Electronics", "Furniture", "Pharma", "Industrial"]
+    if "garbage" in lowered:
+        return ["General"]
+    pretty_type = material_type.title() if material_type else "General"
+    return [pretty_type, "Electronics", "Food"]
+
+
 def fetch_materials(limit=9):
     connection = get_db_connection()
     if not connection:
@@ -299,13 +335,16 @@ def fetch_materials(limit=9):
     try:
         cursor.execute(
             """
-            SELECT material, strength, weight_capacity, biodegradability,
-                   co2_score, cost, recyclability
+            SELECT material,
+                   AVG(strength) AS strength,
+                   AVG(weight_capacity) AS weight_capacity,
+                   AVG(biodegradability) AS biodegradability,
+                   AVG(co2_score) AS co2_score,
+                   AVG(cost) AS cost,
+                   AVG(recyclability) AS recyclability
             FROM final_material_dataset
-            ORDER BY biodegradability DESC, recyclability DESC, strength DESC, weight_capacity DESC
-            LIMIT %s
+            GROUP BY material
             """,
-            (limit,)
         )
         rows = cursor.fetchall()
     except Exception:
@@ -320,7 +359,10 @@ def fetch_materials(limit=9):
     materials = []
     for row in rows:
         name, strength, weight_capacity, biodegradability, co2_score, cost_per_unit, recyclability = row
+        if (name or "").strip().lower() == "garbage classification":
+            continue
         pretty_type = infer_material_type(name, "")
+        display_name = display_material_name(name)
         suitability_score = round(
             (float(biodegradability or 0) * 0.4)
             + (float(recyclability or 0) * 0.3)
@@ -330,7 +372,8 @@ def fetch_materials(limit=9):
         )
         materials.append(
             {
-                "name": name,
+                "name": display_name,
+                "source_name": name,
                 "type": pretty_type,
                 "icon": material_icon(pretty_type),
                 "description": "AI-ranked sustainable packaging option based on your material dataset.",
@@ -344,10 +387,11 @@ def fetch_materials(limit=9):
                 "cost": f"${float(cost_per_unit or 0):.2f}/kg",
                 "cost_value": float(cost_per_unit or 0),
                 "suitability_score": float(suitability_score or 0),
-                "best_for": [pretty_type, "Electronics", "Food"]
+                "best_for": best_for_tags(name, pretty_type)
             }
         )
-    return materials
+    materials.sort(key=lambda item: item["suitability_score"], reverse=True)
+    return materials[:limit]
 
 
 def fetch_product_profile(product_name, category):
@@ -420,11 +464,12 @@ def fetch_product_profile(product_name, category):
     return default_profile
 
 
-def choose_best_material(category, weight, fragility_label, priority, product_profile):
+def score_material_options(category, weight, fragility_label, priority, product_profile):
     required_strength = product_profile.get("required_strength", "Medium")
     shipping_type = product_profile.get("shipping_type", "Standard")
     min_strength, max_strength = strength_band(required_strength)
     tags = category_tags(category)
+    category_value = (category or "").strip().lower()
     materials = fetch_materials(limit=12)
 
     scored = []
@@ -437,10 +482,48 @@ def choose_best_material(category, weight, fragility_label, priority, product_pr
         category_bonus = 10 if any(tag in material["best_for"] for tag in tags) else 0
         shipping_bonus = 6 if shipping_type.lower() in ["international", "express", "protective"] and strength_raw >= 7 else 2
         fragility_bonus = 6 if fragility_label.lower() == "high" and strength_raw >= 8 else 3
-        total = (eco_score * (priority / 10.0)) + (cost_score * (1 - (priority / 10.0))) + strength_fit + capacity_fit + category_bonus + shipping_bonus + fragility_bonus + material["suitability_score"]
+
+        domain_bonus = 0
+        source_name = (material.get("source_name") or material["name"]).strip().lower()
+        if category_value in ["electronics", "home appliances"]:
+            if "carton" in source_name:
+                domain_bonus += 12
+            if "metal" in source_name and weight <= 10:
+                domain_bonus += 4
+            if weight > 15 and "carton" in source_name:
+                domain_bonus += 10
+        elif category_value == "food":
+            if "carton" in source_name:
+                domain_bonus += 8
+            if "plastico" in source_name or "vidrio" in source_name:
+                domain_bonus += 6
+        elif category_value == "cosmetics":
+            if "vidrio" in source_name:
+                domain_bonus += 12
+            if "plastico" in source_name:
+                domain_bonus += 8
+        elif category_value == "pharma":
+            if "vidrio" in source_name:
+                domain_bonus += 10
+            if "plastico" in source_name:
+                domain_bonus += 7
+        elif category_value in ["furniture", "industrial"]:
+            if "carton" in source_name:
+                domain_bonus += 10
+            if "metal" in source_name:
+                domain_bonus += 6
+
+        total = (eco_score * (priority / 10.0)) + (cost_score * (1 - (priority / 10.0))) + strength_fit + capacity_fit + category_bonus + shipping_bonus + fragility_bonus + domain_bonus + material["suitability_score"]
         scored.append((round(total, 2), material))
 
     scored.sort(key=lambda item: item[0], reverse=True)
+    return scored, required_strength, shipping_type
+
+
+def choose_best_material(category, weight, fragility_label, priority, product_profile):
+    scored, required_strength, shipping_type = score_material_options(
+        category, weight, fragility_label, priority, product_profile
+    )
     return scored[0], required_strength, shipping_type
 
 
@@ -604,7 +687,8 @@ def create_user(name, email, password):
             new_user_id = cursor.lastrowid
         connection.commit()
         return True, "Account created successfully.", new_user_id
-    except Exception:
+    except Exception as error:
+        print(f"[EcoPackAI][Auth] Signup failed for {email}: {error}", file=sys.stderr)
         connection.rollback()
         return False, "Unable to create account right now.", None
     finally:
@@ -615,6 +699,7 @@ def create_user(name, email, password):
 def authenticate_user(email, password):
     connection = get_db_connection()
     if not connection:
+        print(f"[EcoPackAI][Auth] Login blocked because database connection is unavailable for {email}.", file=sys.stderr)
         return None
 
     cursor = create_cursor(connection, dictionary=True)
@@ -642,7 +727,7 @@ def collect_analytics_data():
     labels = []
     values = []
     recent_history = []
-    recommendation_dates = []
+    trend_points = []
 
     if connection:
         cursor = create_cursor(connection)
@@ -663,8 +748,8 @@ def collect_analytics_data():
             cursor.execute("SELECT material, co2, cost FROM history ORDER BY id DESC LIMIT 5")
             recent_history = cursor.fetchall()
 
-            cursor.execute("SELECT created_at FROM recommendations ORDER BY created_at ASC")
-            recommendation_dates = cursor.fetchall()
+            cursor.execute("SELECT id, weight, co2 FROM history ORDER BY id ASC")
+            trend_points = cursor.fetchall()
         finally:
             cursor.close()
             connection.close()
@@ -678,7 +763,7 @@ def collect_analytics_data():
         labels = list(counts.keys())
         values = list(counts.values())
         recent_history = [(row[3], row[4], row[5]) for row in fallback_history[-5:]][::-1]
-        recommendation_dates = []
+        trend_points = [(row[0], row[1], row[4]) for row in fallback_history]
 
     if not labels:
         labels = ["Corrugated Cardboard", "Molded Pulp", "PLA Bioplastic", "Mushroom Packaging", "Other"]
@@ -689,28 +774,21 @@ def collect_analytics_data():
     co2_saved = round(((original_co2 - avg_co2) / original_co2) * 100, 2) if original_co2 else 0
     cost_saved = round(((original_cost - avg_cost) / original_cost) * 100, 2) if original_cost else 0
 
-    month_order = []
-    month_counts = {}
-    for entry in recommendation_dates:
-        created_at = entry[0] if isinstance(entry, (list, tuple)) else entry
-        if created_at is None:
+    normalized_trend = []
+    for entry in trend_points:
+        record_id, weight_value, co2_value = entry
+        baseline = float(weight_value or 0) * 2.0
+        if baseline <= 0:
             continue
-        if isinstance(created_at, str):
-            try:
-                created_at = datetime.fromisoformat(created_at)
-            except ValueError:
-                continue
-        month_key = created_at.strftime("%b %Y")
-        if month_key not in month_counts:
-            month_order.append(month_key)
-            month_counts[month_key] = 0
-        month_counts[month_key] += 1
+        reduction_pct = round(max(0, ((baseline - float(co2_value or 0)) / baseline) * 100), 2)
+        normalized_trend.append((record_id, reduction_pct))
 
-    trend_labels = month_order[-6:]
-    trend_values = [month_counts[label] for label in trend_labels]
+    normalized_trend = normalized_trend[-7:]
+    trend_labels = [f"Run {record_id}" for record_id, _ in normalized_trend]
+    trend_values = [reduction for _, reduction in normalized_trend]
     if not trend_labels:
-        trend_labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"]
-        trend_values = [12, 19, 28, 35, 45, 52]
+        trend_labels = ["Run 1", "Run 2", "Run 3", "Run 4", "Run 5", "Run 6"]
+        trend_values = [18, 24, 31, 39, 44, 49]
 
     normalized_history = []
     for row in recent_history:
@@ -807,6 +885,7 @@ def materials_page():
 @login_required
 def recommend():
     result = None
+    alternatives = []
 
     if request.method == "POST":
         product_name = request.form.get("product_name", "Custom Product")
@@ -820,9 +899,10 @@ def recommend():
         if request.form.get("shipping"):
             product_profile["shipping_type"] = request.form.get("shipping")
 
-        (rank_score, best_material), required_strength, shipping_type = choose_best_material(
+        scored_materials, required_strength, shipping_type = score_material_options(
             category, weight, fragility_label, priority, product_profile
         )
+        rank_score, best_material = scored_materials[0]
 
         final_cost, final_co2, environmental_score = predict_with_models(
             weight, fragility_score, priority, required_strength, shipping_type, best_material
@@ -830,6 +910,13 @@ def recommend():
         co2_saved = round(max(0, (weight * 2.0) - final_co2), 2)
         cost_saved = round(max(0, (weight * 2.5) - final_cost), 2)
         recommendation_text = f"Use {best_material['name']} for {product_name} with {required_strength} strength need and {shipping_type} shipping."
+        eco_priority = "Sustainability-first" if priority >= 7 else "Balanced" if priority >= 4 else "Cost-first"
+
+        result_reasons = [
+            f"Matched the {required_strength.lower()} strength requirement for {category.lower()} packaging.",
+            f"Handled {shipping_type.lower()} shipping needs with a strong weight-capacity fit.",
+            f"Balanced your {eco_priority.lower()} priority using cost, CO2, and recyclability signals."
+        ]
 
         result = {
             "material": best_material["name"],
@@ -840,15 +927,35 @@ def recommend():
             "shipping": shipping_type,
             "required_strength": required_strength,
             "matched_product": product_profile.get("matched_product", product_name),
-            "environmental_score": environmental_score
+            "environmental_score": environmental_score,
+            "eco_priority": eco_priority,
+            "description": best_material.get("description", ""),
+            "best_for": best_material.get("best_for", []),
+            "reasons": result_reasons
         }
+
+        for alt_score, alt_material in scored_materials[1:4]:
+            alternatives.append(
+                {
+                    "material": alt_material["name"],
+                    "score": alt_score,
+                    "co2": round(float(alt_material.get("co2_value", 0)), 2),
+                    "cost": round(float(alt_material.get("cost_value", 0)), 2),
+                    "type": alt_material.get("type", "General"),
+                }
+            )
 
         save_product(product_name, category, weight, fragility_label, shipping_type)
         save_history(weight, fragility_score, best_material["name"], final_co2, final_cost)
         save_recommendation(product_name, best_material["name"], co2_saved, cost_saved)
         save_prediction(best_material, final_cost, final_co2, environmental_score, recommendation_text)
 
-    return render_template("recommend.html", active_page="recommendation", result=result)
+    return render_template(
+        "recommend.html",
+        active_page="recommendation",
+        result=result,
+        alternatives=alternatives,
+    )
 
 
 @app.route("/history")

@@ -63,7 +63,7 @@
       <div class="result-top">
         <div>
           <h4>{{ result.material }}</h4>
-          <p>Recommended for your selected weight, fragility, and sustainability priority.</p>
+          <p>{{ result.description or "Recommended for your selected weight, fragility, and sustainability priority." }}</p>
         </div>
         <div class="score-pill">{{ result.rank_score }} rank score</div>
       </div>
@@ -85,6 +85,52 @@
           <strong>{{ result.shipping }}</strong>
         </div>
       </div>
+
+      <div class="recommendation-explainer">
+        <div class="explainer-panel">
+          <h5>Why This Was Chosen</h5>
+          <ul class="reason-list">
+            {% for reason in result.reasons %}
+            <li>{{ reason }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        <div class="explainer-panel">
+          <h5>Recommendation Summary</h5>
+          <div class="summary-chip-row">
+            <span class="summary-chip">{{ result.required_strength }} strength</span>
+            <span class="summary-chip">{{ result.eco_priority }}</span>
+            {% for tag in result.best_for[:3] %}
+            <span class="summary-chip">{{ tag }}</span>
+            {% endfor %}
+          </div>
+          <p class="summary-note">Matched profile: {{ result.matched_product }}</p>
+        </div>
+      </div>
+
+      {% if alternatives %}
+      <div class="alternatives-block">
+        <div class="alternatives-head">
+          <h5>Top Alternatives</h5>
+          <p>Shortlisted options to compare before finalizing packaging.</p>
+        </div>
+        <div class="alternatives-grid">
+          {% for alternative in alternatives %}
+          <article class="alternative-card">
+            <div class="alternative-top">
+              <strong>{{ alternative.material }}</strong>
+              <span>{{ alternative.score }} pts</span>
+            </div>
+            <div class="alternative-meta">{{ alternative.type }}</div>
+            <div class="alternative-stats">
+              <span>CO2 {{ alternative.co2 }}</span>
+              <span>Cost ${{ alternative.cost }}</span>
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
     </div>
     {% endif %}
   </div>
