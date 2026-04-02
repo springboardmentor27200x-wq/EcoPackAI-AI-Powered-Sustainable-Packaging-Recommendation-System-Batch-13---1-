@@ -1,0 +1,1603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EcoPackAI</title>
+  <link rel="preconnect" href="https://api.fontshare.com" />
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
+
+  <style>
+    /* ─── Design Tokens ─────────────────────────────────────── */
+    :root, [data-theme="light"] {
+      --color-bg:              #f4f6f3;
+      --color-surface:         #f9faf8;
+      --color-surface-2:       #ffffff;
+      --color-surface-offset:  #edf0eb;
+      --color-surface-dynamic: #e2e6df;
+      --color-divider:         #d8dcd5;
+      --color-border:          #cdd1ca;
+      --color-text:            #1a2318;
+      --color-text-muted:      #6b7669;
+      --color-text-faint:      #adb2ab;
+      --color-text-inverse:    #f4f6f3;
+      --color-primary:         #1a6b3a;
+      --color-primary-hover:   #135230;
+      --color-primary-active:  #0d3d23;
+      --color-primary-highlight: #c8e6d4;
+      --color-success:         #2d7a45;
+      --color-success-highlight: #d0e8d8;
+      --color-warning:         #b06a00;
+      --color-warning-highlight: #fde9c8;
+      --color-error:           #b02020;
+      --color-error-highlight: #fdd8d8;
+      --color-blue:            #1a5f94;
+      --color-blue-highlight:  #cce0f5;
+      --color-orange:          #c85a00;
+      --color-gold:            #a07800;
+      --color-purple:          #6b3ab0;
+      --radius-sm: 0.375rem;
+      --radius-md: 0.5rem;
+      --radius-lg: 0.75rem;
+      --radius-xl: 1rem;
+      --radius-full: 9999px;
+      --shadow-sm: 0 1px 2px oklch(0.15 0.02 140 / 0.06);
+      --shadow-md: 0 4px 12px oklch(0.15 0.02 140 / 0.09);
+      --shadow-lg: 0 12px 32px oklch(0.15 0.02 140 / 0.13);
+      --transition: 180ms cubic-bezier(0.16, 1, 0.3, 1);
+      --space-1:.25rem;--space-2:.5rem;--space-3:.75rem;--space-4:1rem;
+      --space-5:1.25rem;--space-6:1.5rem;--space-8:2rem;--space-10:2.5rem;
+      --space-12:3rem;--space-16:4rem;
+      --text-xs:clamp(0.75rem,0.7rem + 0.25vw,0.875rem);
+      --text-sm:clamp(0.875rem,0.8rem + 0.35vw,1rem);
+      --text-base:clamp(1rem,0.95rem + 0.25vw,1.125rem);
+      --text-lg:clamp(1.125rem,1rem + 0.75vw,1.5rem);
+      --text-xl:clamp(1.5rem,1.2rem + 1.25vw,2.25rem);
+      --font-body: 'Satoshi', 'Inter', sans-serif;
+      --sidebar-w: 220px;
+      --header-h: 56px;
+    }
+    [data-theme="dark"] {
+      --color-bg:              #111510;
+      --color-surface:         #161a14;
+      --color-surface-2:       #1c2119;
+      --color-surface-offset:  #1a1e18;
+      --color-surface-dynamic: #252b22;
+      --color-divider:         #222720;
+      --color-border:          #2e342b;
+      --color-text:            #c8cdc6;
+      --color-text-muted:      #737870;
+      --color-text-faint:      #484d46;
+      --color-text-inverse:    #1a2318;
+      --color-primary:         #4aad6e;
+      --color-primary-hover:   #3d9460;
+      --color-primary-active:  #2e7049;
+      --color-primary-highlight: #1e3328;
+      --color-success:         #5db87a;
+      --color-success-highlight: #1e3028;
+      --color-warning:         #e09040;
+      --color-warning-highlight: #3a2810;
+      --color-error:           #e06060;
+      --color-error-highlight: #3a1818;
+      --color-blue:            #4a90d0;
+      --color-blue-highlight:  #1a2a3a;
+      --color-orange:          #e07030;
+      --color-gold:            #c0a030;
+      --color-purple:          #9a60e0;
+      --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.25);
+      --shadow-md: 0 4px 12px oklch(0 0 0 / 0.35);
+      --shadow-lg: 0 12px 32px oklch(0 0 0 / 0.45);
+    }
+    @media (prefers-color-scheme: dark) { :root:not([data-theme]) {
+      --color-bg:#111510;--color-surface:#161a14;--color-surface-2:#1c2119;
+      --color-surface-offset:#1a1e18;--color-surface-dynamic:#252b22;
+      --color-divider:#222720;--color-border:#2e342b;--color-text:#c8cdc6;
+      --color-text-muted:#737870;--color-text-faint:#484d46;--color-text-inverse:#1a2318;
+      --color-primary:#4aad6e;--color-primary-hover:#3d9460;--color-primary-active:#2e7049;
+      --color-primary-highlight:#1e3328;--color-success:#5db87a;--color-success-highlight:#1e3028;
+      --color-warning:#e09040;--color-warning-highlight:#3a2810;--color-error:#e06060;
+      --color-error-highlight:#3a1818;--color-blue:#4a90d0;--color-blue-highlight:#1a2a3a;
+      --color-orange:#e07030;--color-gold:#c0a030;--color-purple:#9a60e0;
+      --shadow-sm:0 1px 2px oklch(0 0 0/.25);--shadow-md:0 4px 12px oklch(0 0 0/.35);--shadow-lg:0 12px 32px oklch(0 0 0/.45);
+    }}
+
+    /* ─── Reset & Base ───────────────────────────────────────── */
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{-webkit-font-smoothing:antialiased;scroll-behavior:smooth;font-size:14px}
+    body{min-height:100dvh;font-family:var(--font-body);font-size:var(--text-sm);color:var(--color-text);background:var(--color-bg);line-height:1.5}
+    img,svg{display:block;max-width:100%}
+    input,button,select,textarea{font:inherit;color:inherit}
+    button{cursor:pointer;background:none;border:none}
+    table{border-collapse:collapse;width:100%}
+    h1,h2,h3,h4{text-wrap:balance;line-height:1.2}
+    p,li{text-wrap:pretty}
+    ::selection{background:color-mix(in oklch,var(--color-primary) 20%,transparent);color:var(--color-text)}
+    :focus-visible{outline:2px solid var(--color-primary);outline-offset:2px;border-radius:var(--radius-sm)}
+    a,button,[role="button"],input,select,textarea{transition:color var(--transition),background var(--transition),border-color var(--transition),box-shadow var(--transition),opacity var(--transition)}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+    /* ─── App Shell ──────────────────────────────────────────── */
+    .app-layout{display:flex;min-height:100dvh}
+
+    /* Sidebar */
+    .sidebar{
+      width:var(--sidebar-w);flex-shrink:0;
+      background:var(--color-surface);
+      border-right:1px solid var(--color-border);
+      display:flex;flex-direction:column;
+      position:fixed;top:0;left:0;height:100dvh;
+      z-index:100;transition:transform var(--transition);
+    }
+    .sidebar-brand{
+      display:flex;align-items:center;gap:var(--space-3);
+      padding:var(--space-4) var(--space-5);
+      border-bottom:1px solid var(--color-divider);
+      min-height:var(--header-h);
+    }
+    .brand-logo{display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .brand-name{font-size:var(--text-base);font-weight:700;color:var(--color-text);letter-spacing:-0.02em}
+    .brand-name span{color:var(--color-primary)}
+    .sidebar-nav{flex:1;padding:var(--space-4) var(--space-3);overflow-y:auto}
+    .nav-label{font-size:var(--text-xs);font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-faint);padding:0 var(--space-2) var(--space-2);margin-top:var(--space-4)}
+    .nav-label:first-child{margin-top:0}
+    .nav-item{
+      display:flex;align-items:center;gap:var(--space-3);
+      padding:var(--space-2) var(--space-3);
+      border-radius:var(--radius-md);
+      color:var(--color-text-muted);font-weight:500;
+      text-decoration:none;cursor:pointer;
+      font-size:var(--text-sm);
+      border:none;background:none;width:100%;text-align:left;
+    }
+    .nav-item:hover{background:var(--color-surface-offset);color:var(--color-text)}
+    .nav-item.active{background:var(--color-primary-highlight);color:var(--color-primary);font-weight:600}
+    .nav-item i{width:16px;height:16px;flex-shrink:0}
+    .sidebar-footer{padding:var(--space-4) var(--space-3);border-top:1px solid var(--color-divider)}
+
+    /* API Status badge */
+    .api-status{display:flex;align-items:center;gap:var(--space-2);font-size:var(--text-xs);color:var(--color-text-muted);padding:var(--space-2) var(--space-3);border-radius:var(--radius-full);background:var(--color-surface-offset)}
+    .status-dot{width:7px;height:7px;border-radius:50%;background:var(--color-text-faint);flex-shrink:0;transition:background .3s}
+    .status-dot.online{background:var(--color-success)}
+    .status-dot.offline{background:var(--color-error)}
+
+    /* Main content */
+    .main{
+      margin-left:var(--sidebar-w);
+      flex:1;display:flex;flex-direction:column;min-height:100dvh;
+    }
+    .topbar{
+      height:var(--header-h);background:var(--color-surface);
+      border-bottom:1px solid var(--color-border);
+      display:flex;align-items:center;justify-content:space-between;
+      padding:0 var(--space-8);position:sticky;top:0;z-index:50;
+    }
+    .topbar-title{font-size:var(--text-base);font-weight:600;color:var(--color-text)}
+    .topbar-actions{display:flex;align-items:center;gap:var(--space-3)}
+    .icon-btn{
+      width:36px;height:36px;border-radius:var(--radius-md);
+      display:flex;align-items:center;justify-content:center;
+      color:var(--color-text-muted);border:1px solid var(--color-border);
+      background:var(--color-surface);
+    }
+    .icon-btn:hover{background:var(--color-surface-offset);color:var(--color-text)}
+    .hamburger{display:none}
+
+    .page-content{flex:1;padding:var(--space-8);max-width:1200px;width:100%}
+
+    /* ─── Pages ──────────────────────────────────────────────── */
+    .page{display:none}
+    .page.active{display:block}
+
+    /* ─── KPI Cards ──────────────────────────────────────────── */
+    .kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:var(--space-4);margin-bottom:var(--space-8)}
+    .kpi-card{
+      background:var(--color-surface-2);border:1px solid var(--color-border);
+      border-radius:var(--radius-lg);padding:var(--space-5);
+      box-shadow:var(--shadow-sm);
+    }
+    .kpi-label{font-size:var(--text-xs);font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:var(--space-2)}
+    .kpi-value{font-size:var(--text-xl);font-weight:700;color:var(--color-text);font-variant-numeric:tabular-nums;line-height:1}
+    .kpi-sub{font-size:var(--text-xs);color:var(--color-text-muted);margin-top:var(--space-2);display:flex;align-items:center;gap:var(--space-1)}
+    .kpi-badge{font-size:var(--text-xs);font-weight:600;padding:1px var(--space-2);border-radius:var(--radius-full)}
+    .kpi-badge.up{background:var(--color-success-highlight);color:var(--color-success)}
+    .kpi-badge.neutral{background:var(--color-surface-offset);color:var(--color-text-muted)}
+
+    /* ─── Form ───────────────────────────────────────────────── */
+    .section-header{margin-bottom:var(--space-6)}
+    .section-title{font-size:var(--text-lg);font-weight:700;color:var(--color-text)}
+    .section-desc{font-size:var(--text-sm);color:var(--color-text-muted);margin-top:var(--space-1)}
+    .card{background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-6);box-shadow:var(--shadow-sm)}
+    .card-title{font-size:var(--text-base);font-weight:600;margin-bottom:var(--space-5);color:var(--color-text)}
+    .form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:var(--space-5)}
+    .form-group{display:flex;flex-direction:column;gap:var(--space-2)}
+    .form-label{font-size:var(--text-xs);font-weight:600;color:var(--color-text-muted);letter-spacing:.03em}
+    .form-input{
+      padding:var(--space-2) var(--space-3);
+      border:1px solid var(--color-border);
+      border-radius:var(--radius-md);
+      background:var(--color-surface);
+      color:var(--color-text);font-size:var(--text-sm);
+      width:100%;
+    }
+    .form-input:focus{outline:none;border-color:var(--color-primary);box-shadow:0 0 0 3px color-mix(in oklch,var(--color-primary) 15%,transparent)}
+    .range-wrap{display:flex;flex-direction:column;gap:var(--space-1)}
+    .range-row{display:flex;align-items:center;gap:var(--space-3)}
+    .range-val{font-size:var(--text-xs);font-weight:600;color:var(--color-primary);min-width:28px;text-align:right;font-variant-numeric:tabular-nums}
+    input[type="range"]{-webkit-appearance:none;appearance:none;flex:1;height:4px;border-radius:var(--radius-full);background:var(--color-surface-dynamic);outline:none}
+    input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:16px;height:16px;border-radius:50%;background:var(--color-primary);cursor:pointer;border:2px solid var(--color-surface-2);box-shadow:var(--shadow-sm)}
+    .form-actions{display:flex;gap:var(--space-3);margin-top:var(--space-6);align-items:center}
+    .btn{display:inline-flex;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-5);border-radius:var(--radius-md);font-size:var(--text-sm);font-weight:600;cursor:pointer;border:1px solid transparent;text-decoration:none;white-space:nowrap}
+    .btn-primary{background:var(--color-primary);color:var(--color-text-inverse);border-color:var(--color-primary)}
+    .btn-primary:hover{background:var(--color-primary-hover);border-color:var(--color-primary-hover)}
+    .btn-primary:active{background:var(--color-primary-active)}
+    .btn-ghost{background:transparent;color:var(--color-text-muted);border-color:var(--color-border)}
+    .btn-ghost:hover{background:var(--color-surface-offset);color:var(--color-text);border-color:var(--color-border)}
+    .btn-sm{padding:var(--space-1) var(--space-3);font-size:var(--text-xs)}
+    .btn i{width:15px;height:15px}
+    .spinner{width:16px;height:16px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;display:none}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .btn.loading .spinner{display:block}
+    .btn.loading .btn-label{display:none}
+
+    /* ─── Results ────────────────────────────────────────────── */
+    .results-section{margin-top:var(--space-8);display:none}
+    .results-section.visible{display:block}
+    .prediction-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:var(--space-4);margin-bottom:var(--space-6)}
+    .pred-card{background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-4);text-align:center;box-shadow:var(--shadow-sm)}
+    .pred-icon{width:32px;height:32px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;margin:0 auto var(--space-2)}
+    .pred-icon.green{background:var(--color-success-highlight);color:var(--color-success)}
+    .pred-icon.blue{background:var(--color-blue-highlight);color:var(--color-blue)}
+    .pred-icon.orange{background:var(--color-warning-highlight);color:var(--color-warning)}
+    .pred-icon.purple{background:color-mix(in oklch,var(--color-purple) 15%,transparent);color:var(--color-purple)}
+    .pred-value{font-size:var(--text-lg);font-weight:700;color:var(--color-text);font-variant-numeric:tabular-nums}
+    .pred-label{font-size:var(--text-xs);color:var(--color-text-muted);margin-top:var(--space-1)}
+
+    /* ─── Table ──────────────────────────────────────────────── */
+    .table-wrap{overflow-x:auto;border-radius:var(--radius-lg);border:1px solid var(--color-border);box-shadow:var(--shadow-sm)}
+    .data-table{width:100%;font-size:var(--text-xs)}
+    .data-table thead tr{background:var(--color-surface-offset)}
+    .data-table th{padding:var(--space-3) var(--space-4);text-align:left;font-size:var(--text-xs);font-weight:600;color:var(--color-text-muted);letter-spacing:.04em;text-transform:uppercase;border-bottom:1px solid var(--color-border);white-space:nowrap}
+    .data-table td{padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--color-divider);color:var(--color-text);font-variant-numeric:tabular-nums;vertical-align:middle}
+    .data-table tbody tr:last-child td{border-bottom:none}
+    .data-table tbody tr:hover td{background:var(--color-surface-offset)}
+    .badge{display:inline-flex;align-items:center;padding:2px var(--space-2);border-radius:var(--radius-full);font-size:var(--text-xs);font-weight:600;white-space:nowrap}
+    .badge-green{background:var(--color-success-highlight);color:var(--color-success)}
+    .badge-blue{background:var(--color-blue-highlight);color:var(--color-blue)}
+    .badge-orange{background:var(--color-warning-highlight);color:var(--color-warning)}
+    .badge-gray{background:var(--color-surface-offset);color:var(--color-text-muted)}
+    .badge-purple{background:color-mix(in oklch,var(--color-purple) 15%,transparent);color:var(--color-purple)}
+
+    /* Score bar */
+    .score-bar-wrap{display:flex;align-items:center;gap:var(--space-2);min-width:100px}
+    .score-bar{height:5px;border-radius:var(--radius-full);background:var(--color-surface-dynamic);flex:1;overflow:hidden}
+    .score-bar-fill{height:100%;border-radius:var(--radius-full);background:var(--color-primary);transition:width .5s cubic-bezier(.16,1,.3,1)}
+    .score-num{font-size:var(--text-xs);font-weight:600;color:var(--color-text);min-width:28px;text-align:right;font-variant-numeric:tabular-nums}
+
+    /* ─── Filters ────────────────────────────────────────────── */
+    .filters-bar{display:flex;flex-wrap:wrap;gap:var(--space-3);margin-bottom:var(--space-5);align-items:center}
+    .filter-select{padding:var(--space-2) var(--space-3);border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-surface-2);color:var(--color-text);font-size:var(--text-sm);cursor:pointer}
+    .filter-input{padding:var(--space-2) var(--space-3);border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-surface-2);color:var(--color-text);font-size:var(--text-sm);min-width:200px}
+    .filter-input::placeholder{color:var(--color-text-faint)}
+
+    /* ─── Charts ─────────────────────────────────────────────── */
+    .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-6);margin-bottom:var(--space-6)}
+    .charts-grid.full{grid-template-columns:1fr}
+    .chart-card{background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-6);box-shadow:var(--shadow-sm)}
+    .chart-card-title{font-size:var(--text-sm);font-weight:600;color:var(--color-text);margin-bottom:var(--space-4)}
+    .chart-card-sub{font-size:var(--text-xs);color:var(--color-text-muted);margin-top:-var(--space-2);margin-bottom:var(--space-4)}
+    .chart-container{position:relative;height:260px}
+
+    /* ─── Recommendation Cards ───────────────────────────────── */
+    .rec-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:var(--space-4)}
+    .rec-card{
+      background:var(--color-surface-2);border:1px solid var(--color-border);
+      border-radius:var(--radius-lg);padding:var(--space-5);
+      box-shadow:var(--shadow-sm);cursor:default;
+    }
+    .rec-card:hover{box-shadow:var(--shadow-md);border-color:var(--color-primary);transform:translateY(-1px)}
+    .rec-rank{font-size:var(--text-xs);font-weight:700;color:var(--color-primary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:var(--space-2)}
+    .rec-name{font-size:var(--text-base);font-weight:700;color:var(--color-text);margin-bottom:var(--space-1)}
+    .rec-type{font-size:var(--text-xs);color:var(--color-text-muted);margin-bottom:var(--space-4)}
+    .rec-metrics{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)}
+    .rec-metric{display:flex;flex-direction:column;gap:2px}
+    .rec-metric-label{font-size:var(--text-xs);color:var(--color-text-faint);font-weight:500}
+    .rec-metric-val{font-size:var(--text-sm);font-weight:600;color:var(--color-text);font-variant-numeric:tabular-nums}
+
+    /* ─── Empty / Error States ───────────────────────────────── */
+    .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:var(--space-16) var(--space-8);color:var(--color-text-muted)}
+    .empty-state i{width:40px;height:40px;color:var(--color-text-faint);margin-bottom:var(--space-4)}
+    .empty-state h3{color:var(--color-text);font-size:var(--text-base);margin-bottom:var(--space-2)}
+    .empty-state p{font-size:var(--text-sm);max-width:36ch}
+    .error-msg{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) var(--space-4);background:var(--color-error-highlight);border-radius:var(--radius-md);color:var(--color-error);font-size:var(--text-sm);display:none}
+    .error-msg.visible{display:flex}
+    .error-msg i{width:16px;height:16px;flex-shrink:0}
+
+    /* ─── Skeleton ───────────────────────────────────────────── */
+    @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+    .skeleton{background:linear-gradient(90deg,var(--color-surface-offset) 25%,var(--color-surface-dynamic) 50%,var(--color-surface-offset) 75%);background-size:200% 100%;animation:shimmer 1.5s ease-in-out infinite;border-radius:var(--radius-sm)}
+    .skeleton-row{height:40px;margin-bottom:var(--space-2)}
+
+    /* ─── Toast ──────────────────────────────────────────────── */
+    .toast-wrap{position:fixed;bottom:var(--space-6);right:var(--space-6);z-index:200;display:flex;flex-direction:column;gap:var(--space-2)}
+    .toast{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) var(--space-4);background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);font-size:var(--text-sm);animation:slideUp .25s ease;max-width:320px}
+    @keyframes slideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    .toast i{width:16px;height:16px;flex-shrink:0}
+    .toast.success i{color:var(--color-success)}
+    .toast.error i{color:var(--color-error)}
+    .toast.info i{color:var(--color-blue)}
+
+
+    /* ─── Reports Page ───────────────────────────────────────── */
+    .export-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:var(--space-5);margin-bottom:var(--space-8)}
+    .export-card{
+      background:var(--color-surface-2);border:1px solid var(--color-border);
+      border-radius:var(--radius-lg);padding:var(--space-6);
+      box-shadow:var(--shadow-sm);display:flex;flex-direction:column;gap:var(--space-4);
+    }
+    .export-card:hover{box-shadow:var(--shadow-md)}
+    .export-icon{width:44px;height:44px;border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .export-icon.pdf{background:var(--color-error-highlight);color:var(--color-error)}
+    .export-icon.xl{background:var(--color-success-highlight);color:var(--color-success)}
+    .export-icon.dash{background:var(--color-blue-highlight);color:var(--color-blue)}
+    .export-icon.sum{background:var(--color-warning-highlight);color:var(--color-warning)}
+    .export-card-title{font-size:var(--text-base);font-weight:700;color:var(--color-text)}
+    .export-card-desc{font-size:var(--text-sm);color:var(--color-text-muted);line-height:1.55;flex:1}
+    .export-meta{display:flex;flex-wrap:wrap;gap:var(--space-2)}
+    .export-tag{font-size:var(--text-xs);font-weight:500;padding:2px var(--space-2);border-radius:var(--radius-full);background:var(--color-surface-offset);color:var(--color-text-muted)}
+    .progress-wrap{height:4px;border-radius:var(--radius-full);background:var(--color-surface-dynamic);overflow:hidden;display:none}
+    .progress-wrap.visible{display:block}
+    .progress-bar{height:100%;border-radius:var(--radius-full);background:var(--color-primary);width:0%;transition:width .4s cubic-bezier(.16,1,.3,1)}
+    .report-log{background:var(--color-surface-offset);border-radius:var(--radius-md);padding:var(--space-4);font-size:var(--text-xs);font-family:monospace;color:var(--color-text-muted);max-height:120px;overflow-y:auto;display:none;line-height:1.7}
+    .report-log.visible{display:block}
+    .report-history{display:flex;flex-direction:column;gap:var(--space-2)}
+    .report-history-item{display:flex;align-items:center;justify-content:space-between;padding:var(--space-3) var(--space-4);background:var(--color-surface-offset);border-radius:var(--radius-md);font-size:var(--text-sm)}
+    .report-history-left{display:flex;align-items:center;gap:var(--space-3)}
+    .report-history-left i{width:15px;height:15px;color:var(--color-text-faint)}
+    .report-history-name{font-weight:500;color:var(--color-text)}
+    .report-history-time{font-size:var(--text-xs);color:var(--color-text-muted)}
+
+    /* ─── Dashboard export strip ─────────────────────────────── */
+    .dash-actions{display:flex;gap:var(--space-2);justify-content:flex-end;margin-bottom:var(--space-4)}
+
+    /* ─── btn-danger ─────────────────────────────────────────── */
+    .btn-danger{background:var(--color-error);color:#fff;border-color:var(--color-error)}
+    .btn-danger:hover{opacity:.88}
+    .btn-success{background:var(--color-success);color:#fff;border-color:var(--color-success)}
+    .btn-success:hover{opacity:.88}
+    .btn-blue{background:var(--color-blue);color:#fff;border-color:var(--color-blue)}
+    .btn-blue:hover{opacity:.88}
+
+    /* ─── Mobile ─────────────────────────────────────────────── */
+    @media(max-width:768px){
+      .sidebar{transform:translateX(-100%)}
+      .sidebar.open{transform:translateX(0)}
+      .main{margin-left:0}
+      .hamburger{display:flex}
+      .charts-grid{grid-template-columns:1fr}
+      .form-grid{grid-template-columns:1fr}
+      .page-content{padding:var(--space-5)}
+      .kpi-grid{grid-template-columns:repeat(2,1fr)}
+      .sidebar-overlay{display:block}
+    }
+    .sidebar-overlay{display:none;position:fixed;inset:0;background:oklch(0 0 0/0.4);z-index:99}
+    .sidebar-overlay.visible{display:block}
+
+    /* ─── Divider ────────────────────────────────────────────── */
+    hr{border:none;border-top:1px solid var(--color-divider);margin:var(--space-6) 0}
+
+    /* ─── API Config Notice ──────────────────────────────────── */
+    .config-notice{background:var(--color-warning-highlight);border:1px solid color-mix(in oklch,var(--color-warning) 30%,transparent);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);font-size:var(--text-xs);color:var(--color-warning);display:flex;align-items:center;gap:var(--space-2);margin-bottom:var(--space-6)}
+    .config-notice i{width:14px;height:14px;flex-shrink:0}
+
+    /* ─── Tab row ────────────────────────────────────────────── */
+    .tab-row{display:flex;gap:var(--space-1);border-bottom:1px solid var(--color-border);margin-bottom:var(--space-6)}
+    .tab-btn{padding:var(--space-2) var(--space-4);font-size:var(--text-sm);font-weight:500;color:var(--color-text-muted);border-bottom:2px solid transparent;cursor:pointer;border-radius:var(--radius-sm) var(--radius-sm) 0 0;margin-bottom:-1px}
+    .tab-btn:hover{color:var(--color-text)}
+    .tab-btn.active{color:var(--color-primary);border-bottom-color:var(--color-primary);font-weight:600}
+    .tab-panel{display:none}
+    .tab-panel.active{display:block}
+  </style>
+</head>
+<body>
+<a class="sr-only" href="#main-content">Skip to main content</a>
+
+<!-- Sidebar overlay (mobile) -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar" role="navigation" aria-label="Main navigation">
+  <div class="sidebar-brand">
+    <div class="brand-logo">
+      <svg aria-label="EcoPackAI logo" width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="28" height="28" rx="7" fill="var(--color-primary)"/>
+        <path d="M8 20c0-5.333 3.2-9.333 8-10 0 2.667-1.333 4.667-4 6 2.667-1.333 5.333-1.333 8 0-2.667 2.667-6 4-12 4z" fill="white"/>
+        <circle cx="20" cy="10" r="2.5" fill="white" opacity=".7"/>
+      </svg>
+    </div>
+    <span class="brand-name">Eco<span>Pack</span>AI</span>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-label">Main</div>
+    <button class="nav-item active" data-page="recommend" onclick="navigate(this,'recommend')">
+      <i data-lucide="sparkles"></i> AI Recommend
+    </button>
+    <button class="nav-item" data-page="materials" onclick="navigate(this,'materials')">
+      <i data-lucide="layers"></i> Materials
+    </button>
+    <button class="nav-item" data-page="categories" onclick="navigate(this,'categories')">
+      <i data-lucide="tag"></i> Categories
+    </button>
+    <div class="nav-label">Analytics</div>
+    <button class="nav-item" data-page="dashboard" onclick="navigate(this,'dashboard')">
+      <i data-lucide="bar-chart-2"></i> BI Dashboard
+    </button>
+    <button class="nav-item" data-page="reports" onclick="navigate(this,'reports')">
+      <i data-lucide="file-text"></i> Reports
+    </button>
+    <!-- <div class="nav-label">Settings</div>
+    <button class="nav-item" data-page="settings" onclick="navigate(this,'settings')">
+      <i data-lucide="settings"></i> API Config
+    </button> -->
+  </nav>
+  <div class="sidebar-footer">
+    <div class="api-status" id="apiStatus">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">Checking API…</span>
+    </div>
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="main" id="main-content">
+  <header class="topbar">
+    <div style="display:flex;align-items:center;gap:var(--space-3)">
+      <button class="icon-btn hamburger" aria-label="Open menu" onclick="openSidebar()">
+        <i data-lucide="menu" style="width:18px;height:18px"></i>
+      </button>
+      <span class="topbar-title" id="topbarTitle">AI Recommendation</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="icon-btn" aria-label="Refresh" onclick="refreshPage()">
+        <i data-lucide="refresh-cw" style="width:16px;height:16px"></i>
+      </button>
+      <button class="icon-btn" aria-label="Toggle theme" data-theme-toggle id="themeToggle">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="page-content">
+
+    <!-- ── PAGE: Recommend ───────────────────────────────────── -->
+    <section class="page active" id="page-recommend">
+      <div class="section-header">
+        <h1 class="section-title">AI Material Recommendation</h1>
+        <p class="section-desc">Enter your product packaging requirements — our ML model predicts cost, CO₂ footprint, and suggests the best eco-friendly materials.</p>
+      </div>
+
+      <!-- <div class="config-notice" id="configNotice">
+        <i data-lucide="alert-triangle"></i>
+        Flask backend must be running at <strong id="apiBaseDisplay">http://localhost:5000</strong>. Go to <strong>API Config</strong> to change.
+      </div> -->
+
+      <div class="card">
+        <h2 class="card-title">Product Requirements</h2>
+        <form id="recommendForm" onsubmit="submitRecommend(event)">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="strength_rating">Strength Rating</label>
+              <div class="range-wrap">
+                <div class="range-row">
+                  <input type="range" id="strength_rating" min="1" max="10" step="1" value="6"
+                    oninput="document.getElementById('strength_val').textContent=this.value" />
+                  <span class="range-val" id="strength_val">6</span>
+                </div>
+                <span style="font-size:var(--text-xs);color:var(--color-text-faint)">1 (fragile) → 10 (industrial)</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="weight_capacity_kg">Weight Capacity (kg)</label>
+              <input class="form-input" type="number" id="weight_capacity_kg" value="10" min="0.1" max="500" step="0.1" placeholder="e.g. 10" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="biodeg_score">Biodegradability Score</label>
+              <div class="range-wrap">
+                <div class="range-row">
+                  <input type="range" id="biodeg_score" min="0" max="100" step="5" value="70"
+                    oninput="document.getElementById('biodeg_val').textContent=this.value+'%'" />
+                  <span class="range-val" id="biodeg_val">70%</span>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="recyclability">Recyclability (%)</label>
+              <div class="range-wrap">
+                <div class="range-row">
+                  <input type="range" id="recyclability" min="0" max="100" step="5" value="65"
+                    oninput="document.getElementById('recycle_val').textContent=this.value+'%'" />
+                  <span class="range-val" id="recycle_val">65%</span>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="moisture_resistance">Moisture Resistance</label>
+              <div class="range-wrap">
+                <div class="range-row">
+                  <input type="range" id="moisture_resistance" min="1" max="10" step="1" value="5"
+                    oninput="document.getElementById('moist_val').textContent=this.value" />
+                  <span class="range-val" id="moist_val">5</span>
+                </div>
+                <span style="font-size:var(--text-xs);color:var(--color-text-faint)">1 (low) → 10 (waterproof)</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="decomp_days">Decomposition Time (days)</label>
+              <input class="form-input" type="number" id="decomp_days" value="90" min="1" max="36500" step="1" placeholder="e.g. 90" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="material_type_enc">Material Type</label>
+              <select class="form-input filter-select" id="material_type_enc">
+                <option value="0">Bioplastic</option>
+                <option value="1">Cellulose</option>
+                <option value="2">Mycelium</option>
+                <option value="3" selected>Paper/Fiber</option>
+                <option value="4">Recycled Plastic</option>
+                <option value="5">Seaweed</option>
+                <option value="6">Agricultural Waste</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="source_type_enc">Source Type</label>
+              <select class="form-input filter-select" id="source_type_enc">
+                <option value="0">Agricultural Waste</option>
+                <option value="1" selected>Renewable</option>
+                <option value="2">Recycled</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" type="submit" id="submitBtn">
+              <span class="btn-label" style="display:flex;align-items:center;gap:var(--space-2)">
+                <i data-lucide="sparkles" style="width:14px;height:14px"></i> Get Recommendation
+              </span>
+              <span class="spinner"></span>
+            </button>
+            <button class="btn btn-ghost" type="button" onclick="resetForm()">Reset</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="error-msg" id="recommendError">
+        <i data-lucide="alert-circle"></i>
+        <span id="recommendErrorMsg">Could not connect to Flask API. Make sure it is running.</span>
+      </div>
+
+      <!-- Results -->
+      <div class="results-section" id="resultsSection">
+        <hr/>
+        <div class="section-header">
+          <h2 class="section-title">ML Predictions</h2>
+          <p class="section-desc">Based on your input parameters</p>
+        </div>
+        <div class="prediction-grid" id="predGrid"></div>
+
+        <div class="section-header" style="margin-top:var(--space-8)">
+          <h2 class="section-title">Top Recommended Materials</h2>
+          <p class="section-desc">Best matching eco-friendly materials from the database</p>
+        </div>
+        <div class="rec-grid" id="recGrid"></div>
+      </div>
+    </section>
+
+    <!-- ── PAGE: Materials ───────────────────────────────────── -->
+    <section class="page" id="page-materials">
+      <div class="section-header">
+        <h1 class="section-title">Materials Library</h1>
+        <p class="section-desc">Browse and filter all eco-friendly packaging materials in the database.</p>
+      </div>
+      <div class="filters-bar">
+        <input class="filter-input" id="matSearch" type="search" placeholder="Search material name…" oninput="filterMaterials()" />
+        <select class="filter-select" id="matTypeFilter" onchange="filterMaterials()">
+          <option value="">All Types</option>
+          <option>Bioplastic</option><option>Cellulose</option><option>Mycelium</option>
+          <option>Paper/Fiber</option><option>Recycled Plastic</option><option>Seaweed</option>
+          <option>Agricultural Waste</option>
+        </select>
+        <select class="filter-select" id="matSrcFilter" onchange="filterMaterials()">
+          <option value="">All Sources</option>
+          <option>Renewable</option><option>Recycled</option><option>Agricultural Waste</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" onclick="loadMaterials()">
+          <i data-lucide="refresh-cw" style="width:13px;height:13px"></i> Reload
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="exportExcel('materials')">
+          <i data-lucide="download" style="width:13px;height:13px"></i> Export Excel
+        </button>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table" id="matTable">
+          <thead>
+            <tr>
+              <th>ID</th><th>Material Name</th><th>Type</th>
+              <th>Strength</th><th>Biodeg %</th><th>CO₂</th>
+              <th>Recyclability</th><th>Cost/kg (USD)</th>
+              <th>Suitability</th><th>Source</th>
+            </tr>
+          </thead>
+          <tbody id="matTableBody">
+            <tr><td colspan="10"><div class="skeleton skeleton-row"></div><div class="skeleton skeleton-row"></div><div class="skeleton skeleton-row"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p id="matCount" style="margin-top:var(--space-3);font-size:var(--text-xs);color:var(--color-text-muted)"></p>
+    </section>
+
+    <!-- ── PAGE: Categories ──────────────────────────────────── -->
+    <section class="page" id="page-categories">
+      <div class="section-header">
+        <h1 class="section-title">Product Categories</h1>
+        <p class="section-desc">Industry packaging categories with minimum material requirements.</p>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Category</th><th>Weight Range (kg)</th>
+              <th>Min Strength</th><th>Min Moisture Res.</th>
+              <th>Min Biodeg %</th><th>Max CO₂</th>
+              <th>Sustainability Priority</th><th>Special Requirements</th>
+            </tr>
+          </thead>
+          <tbody id="catTableBody">
+            <tr><td colspan="8"><div class="skeleton skeleton-row"></div><div class="skeleton skeleton-row"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ── PAGE: Dashboard ───────────────────────────────────── -->
+    <section class="page" id="page-dashboard">
+      <div class="section-header">
+        <h1 class="section-title">BI Dashboard</h1>
+        <p class="section-desc">Sustainability intelligence — CO₂ impact, cost analysis, material composition. (Milestone 4 — Module 7)</p>
+      </div>
+      <div class="dash-actions">
+        <button class="btn btn-ghost btn-sm" onclick="exportDashboardPDF()" id="dashPdfBtn">
+          <i data-lucide="file-text" style="width:13px;height:13px"></i>
+          <span class="btn-label">Export PDF</span>
+          <span class="spinner"></span>
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="exportExcel('dashboard')">
+          <i data-lucide="table-2" style="width:13px;height:13px"></i> Export Excel
+        </button>
+      </div>
+      <div class="kpi-grid" id="dashKpis">
+        <div class="kpi-card"><div class="kpi-label">Total Materials</div><div class="kpi-value" id="kpiTotal">—</div><div class="kpi-sub"><span class="kpi-badge neutral">in database</span></div></div>
+        <div class="kpi-card"><div class="kpi-label">Avg Biodeg Score</div><div class="kpi-value" id="kpiBiodeg">—</div><div class="kpi-sub"><span class="kpi-badge up">% out of 100</span></div></div>
+        <div class="kpi-card"><div class="kpi-label">Avg CO₂ Emission</div><div class="kpi-value" id="kpiCo2">—</div><div class="kpi-sub"><span class="kpi-badge neutral">kg per kg material</span></div></div>
+        <div class="kpi-card"><div class="kpi-label">Avg Cost / kg</div><div class="kpi-value" id="kpiCost">—</div><div class="kpi-sub"><span class="kpi-badge neutral">USD</span></div></div>
+        <div class="kpi-card"><div class="kpi-label">Avg Recyclability</div><div class="kpi-value" id="kpiRecycle">—</div><div class="kpi-sub"><span class="kpi-badge up">% recycled</span></div></div>
+      </div>
+
+      <div class="tab-row">
+        <button class="tab-btn active" onclick="switchTab(this,'tab-overview')">Overview</button>
+        <button class="tab-btn" onclick="switchTab(this,'tab-analysis')">Deep Analysis</button>
+        <button class="tab-btn" onclick="switchTab(this,'tab-top')">Top Materials</button>
+      </div>
+
+      <div class="tab-panel active" id="tab-overview">
+        <div class="charts-grid">
+          <div class="chart-card">
+            <div class="chart-card-title">CO₂ Emission by Material Type</div>
+            <div class="chart-container"><canvas id="co2ByTypeChart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-title">Source Type Distribution</div>
+            <div class="chart-container"><canvas id="sourceDistChart"></canvas></div>
+          </div>
+        </div>
+        <div class="charts-grid">
+          <div class="chart-card">
+            <div class="chart-card-title">Biodegradability Score Distribution</div>
+            <div class="chart-container"><canvas id="biodegDistChart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-title">Cost vs Biodegradability Score</div>
+            <div class="chart-container"><canvas id="costVsBiodegChart"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-analysis">
+        <div class="charts-grid">
+          <div class="chart-card">
+            <div class="chart-card-title">Average Recyclability by Source Type</div>
+            <div class="chart-container"><canvas id="recycleBySrcChart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-title">Strength Rating Distribution</div>
+            <div class="chart-container"><canvas id="strengthDistChart"></canvas></div>
+          </div>
+        </div>
+        <div class="charts-grid full">
+          <div class="chart-card">
+            <div class="chart-card-title">CO₂ vs Cost per Material Type (Scatter)</div>
+            <div class="chart-container"><canvas id="co2CostScatterChart"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-top">
+        <div class="chart-card" style="margin-bottom:var(--space-6)">
+          <div class="chart-card-title">Top 10 Materials by Suitability Score</div>
+          <div class="chart-container" style="height:340px"><canvas id="top10Chart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-title">Top 10 Materials — CO₂ Footprint Comparison</div>
+          <div class="chart-container" style="height:340px"><canvas id="top10Co2Chart"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ── PAGE: Reports ────────────────────────────────────────── -->
+    <section class="page" id="page-reports">
+      <div class="section-header">
+        <h1 class="section-title">Reports &amp; Exports</h1>
+        <p class="section-desc">Generate sustainability PDF reports and export data to Excel — Module 7 (Milestone 4).</p>
+      </div>
+
+      <!-- Export progress -->
+      <div id="exportProgress" style="margin-bottom:var(--space-5);display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-2)">
+          <span id="exportProgressLabel" style="font-size:var(--text-xs);font-weight:600;color:var(--color-text-muted)">Generating…</span>
+          <span id="exportProgressPct" style="font-size:var(--text-xs);font-weight:700;color:var(--color-primary);font-variant-numeric:tabular-nums">0%</span>
+        </div>
+        <div class="progress-wrap visible"><div class="progress-bar" id="exportProgressBar"></div></div>
+        <div class="report-log visible" id="exportLog"></div>
+      </div>
+
+      <div class="export-grid">
+
+        <!-- PDF Full Report -->
+        <div class="export-card">
+          <div style="display:flex;align-items:flex-start;gap:var(--space-4)">
+            <div class="export-icon pdf"><i data-lucide="file-text" style="width:20px;height:20px"></i></div>
+            <div>
+              <div class="export-card-title">Sustainability Report</div>
+              <div class="export-card-desc">Full PDF report with cover page, KPI summary, materials ranking table, CO₂ analysis, and sourcing breakdown.</div>
+            </div>
+          </div>
+          <div class="export-meta">
+            <span class="export-tag">PDF</span>
+            <span class="export-tag">KPI Summary</span>
+            <span class="export-tag">Materials Table</span>
+            <span class="export-tag">CO₂ Analysis</span>
+          </div>
+          <button class="btn btn-success btn-sm" id="pdfFullBtn" onclick="exportFullPDF()">
+            <i data-lucide="download" style="width:13px;height:13px"></i>
+            <span class="btn-label">Generate PDF</span>
+            <span class="spinner"></span>
+          </button>
+        </div>
+
+        <!-- Excel Full Export -->
+        <div class="export-card">
+          <div style="display:flex;align-items:flex-start;gap:var(--space-4)">
+            <div class="export-icon xl"><i data-lucide="table-2" style="width:20px;height:20px"></i></div>
+            <div>
+              <div class="export-card-title">Full Data Export (.xlsx)</div>
+              <div class="export-card-desc">Multi-sheet Excel workbook with Materials Library, Product Categories, and Sustainability Summary Analytics.</div>
+            </div>
+          </div>
+          <div class="export-meta">
+            <span class="export-tag">Excel</span>
+            <span class="export-tag">3 Sheets</span>
+            <span class="export-tag">All Materials</span>
+            <span class="export-tag">Summary Stats</span>
+          </div>
+          <button class="btn btn-success btn-sm" onclick="exportExcel('full')">
+            <i data-lucide="download" style="width:13px;height:13px"></i> Export Excel
+          </button>
+        </div>
+
+        <!-- Dashboard PDF Snapshot -->
+        <!-- <div class="export-card">
+          <div style="display:flex;align-items:flex-start;gap:var(--space-4)">
+            <div class="export-icon dash"><i data-lucide="bar-chart-2" style="width:20px;height:20px"></i></div>
+            <div>
+              <div class="export-card-title">Dashboard Snapshot (PDF)</div>
+              <div class="export-card-desc">Captures all 9 BI charts as a PDF snapshot. Dashboard must be loaded first for charts to appear.</div>
+            </div>
+          </div>
+          <div class="export-meta">
+            <span class="export-tag">PDF</span>
+            <span class="export-tag">9 Charts</span>
+            <span class="export-tag">Landscape</span>
+          </div>
+          <button class="btn btn-blue btn-sm" id="dashSnapBtn" onclick="exportDashboardPDF()">
+            <i data-lucide="camera" style="width:13px;height:13px"></i>
+            <span class="btn-label">Capture Charts</span>
+            <span class="spinner"></span>
+          </button>
+        </div> -->
+
+        <!-- Materials CSV -->
+        <div class="export-card">
+          <div style="display:flex;align-items:flex-start;gap:var(--space-4)">
+            <div class="export-icon sum"><i data-lucide="file-spreadsheet" style="width:20px;height:20px"></i></div>
+            <div>
+              <div class="export-card-title">Materials CSV Export</div>
+              <div class="export-card-desc">Export the full materials library as a clean CSV file compatible with any data tool or database import.</div>
+            </div>
+          </div>
+          <div class="export-meta">
+            <span class="export-tag">CSV</span>
+            <span class="export-tag">All Fields</span>
+            <span class="export-tag">UTF-8</span>
+          </div>
+          <button class="btn btn-success btn-sm" onclick="exportCSV()">
+            <i data-lucide="download" style="width:13px;height:13px"></i> Export CSV
+          </button>
+        </div>
+
+      </div><!-- /export-grid -->
+
+      <!-- Export History -->
+      <div class="section-header" style="margin-top:var(--space-4)">
+        <h2 class="section-title" style="font-size:var(--text-base)">Export History</h2>
+        <p class="section-desc">Files generated this session</p>
+      </div>
+      <div id="exportHistory">
+        <div class="empty-state" style="padding:var(--space-10) var(--space-8)">
+          <i data-lucide="clock" style="width:32px;height:32px;margin-bottom:var(--space-3)"></i>
+          <h3>No exports yet</h3>
+          <p>Generated files will appear here.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── PAGE: Settings ───────────────────────────────────── -->
+    <section class="page" id="page-settings">
+      <div class="section-header">
+        <h1 class="section-title">API Configuration</h1>
+        <p class="section-desc">Configure the Flask backend connection settings.</p>
+      </div>
+      <div class="card" style="max-width:480px">
+        <h2 class="card-title">Backend URL</h2>
+        <div class="form-group" style="margin-bottom:var(--space-5)">
+          <label class="form-label" for="apiBaseInput">Flask API Base URL</label>
+          <input class="form-input" id="apiBaseInput" type="url" value="http://localhost:5000" placeholder="http://localhost:5000" />
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" onclick="saveApiConfig()">
+            <i data-lucide="save" style="width:14px;height:14px"></i> Save & Test
+          </button>
+        </div>
+        <div id="configTestResult" style="margin-top:var(--space-4);font-size:var(--text-sm)"></div>
+      </div>
+      <div class="card" style="max-width:480px;margin-top:var(--space-6)">
+        <h2 class="card-title">API Endpoints Reference</h2>
+        <div style="display:flex;flex-direction:column;gap:var(--space-3)">
+          <div style="display:grid;grid-template-columns:120px 1fr;gap:var(--space-2);align-items:start;font-size:var(--text-xs)">
+            <span class="badge badge-green">GET</span><code style="color:var(--color-text-muted)">/api/health</code>
+            <span class="badge badge-green">GET</span><code style="color:var(--color-text-muted)">/api/materials</code>
+            <span class="badge badge-green">GET</span><code style="color:var(--color-text-muted)">/api/materials/top/10</code>
+            <span class="badge badge-green">GET</span><code style="color:var(--color-text-muted)">/api/categories</code>
+            <span class="badge badge-blue">POST</span><code style="color:var(--color-text-muted)">/api/recommend</code>
+            <span class="badge badge-green">GET</span><code style="color:var(--color-text-muted)">/api/recommend/score/:id</code>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /page-content -->
+</div><!-- /main -->
+
+<!-- Toast container -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+  /* ── State ──────────────────────────────────────────────── */
+  let API_BASE = 'http://localhost:5000';
+  let allMaterials = [];
+  let allCategories = [];
+  let chartInstances = {};
+  let exportHistoryList = [];
+  const pageTitles = {
+    recommend:'AI Recommendation', materials:'Materials Library',
+    categories:'Product Categories', dashboard:'BI Dashboard',
+    reports:'Reports & Exports', settings:'API Config'
+  };
+
+  /* ── Theme ──────────────────────────────────────────────── */
+  (function(){
+    const r=document.documentElement;
+    let d=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';
+    r.setAttribute('data-theme',d);
+    const t=document.getElementById('themeToggle');
+    function setIcon(){t.innerHTML=d==='dark'?'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>':'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>'}
+    setIcon();
+    t.addEventListener('click',()=>{d=d==='dark'?'light':'dark';r.setAttribute('data-theme',d);setIcon()});
+  })();
+
+  /* ── Navigation ─────────────────────────────────────────── */
+  function navigate(btn, page) {
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById('page-'+page).classList.add('active');
+    document.getElementById('topbarTitle').textContent = pageTitles[page]||page;
+    closeSidebar();
+    if(page==='materials' && allMaterials.length===0) loadMaterials();
+    if(page==='categories') loadCategories();
+    if(page==='dashboard') loadDashboard();
+    if(page==='reports') { lucide.createIcons(); renderExportHistory(); }
+  }
+  function openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('sidebarOverlay').classList.add('visible')}
+  function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('visible')}
+  function refreshPage(){location.reload()}
+
+  /* ── API Health ─────────────────────────────────────────── */
+  async function checkApiHealth() {
+    const dot=document.getElementById('statusDot');const txt=document.getElementById('statusText');
+    try {
+      const r=await fetch(API_BASE+'/api/health',{signal:AbortSignal.timeout(3000)});
+      if(r.ok){dot.className='status-dot online';txt.textContent='API Online';}
+      else{dot.className='status-dot offline';txt.textContent='API Error';}
+    } catch {dot.className='status-dot offline';txt.textContent='API Offline';}
+  }
+  setInterval(checkApiHealth,15000);
+  checkApiHealth();
+
+  /* ── Toast ──────────────────────────────────────────────── */
+  function toast(msg,type='info'){
+    const icons={success:'check-circle',error:'alert-circle',info:'info'};
+    const w=document.getElementById('toastWrap');
+    const t=document.createElement('div');
+    t.className=`toast ${type}`;
+    t.innerHTML=`<i data-lucide="${icons[type]||'info'}"></i><span>${msg}</span>`;
+    w.appendChild(t);lucide.createIcons();
+    setTimeout(()=>{t.style.opacity='0';t.style.transform='translateY(4px)';setTimeout(()=>t.remove(),300)},3500);
+  }
+
+  /* ── Recommend ──────────────────────────────────────────── */
+  async function submitRecommend(e) {
+    e.preventDefault();
+    const btn=document.getElementById('submitBtn');
+    btn.classList.add('loading');
+    document.getElementById('recommendError').classList.remove('visible');
+    const payload={
+      strength_rating:    parseInt(document.getElementById('strength_rating').value),
+      weight_capacity_kg: parseFloat(document.getElementById('weight_capacity_kg').value),
+      biodegradability_score: parseInt(document.getElementById('biodeg_score').value),
+      recyclability_percentage: parseInt(document.getElementById('recyclability').value),
+      moisture_resistance: parseInt(document.getElementById('moisture_resistance').value),
+      decomposition_time_days: parseInt(document.getElementById('decomp_days').value),
+      material_type_enc: parseInt(document.getElementById('material_type_enc').value),
+      source_type_enc:   parseInt(document.getElementById('source_type_enc').value)
+    };
+    try {
+      const res=await fetch(API_BASE+'/api/recommend',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:AbortSignal.timeout(10000)});
+      if(!res.ok) throw new Error('API returned '+res.status);
+      const data=await res.json();
+      if(data.status==='success') renderResults(data);
+      else throw new Error(data.message||'Unknown error');
+      toast('Recommendations loaded!','success');
+    } catch(err) {
+      document.getElementById('recommendError').classList.add('visible');
+      document.getElementById('recommendErrorMsg').textContent=err.message||'Could not connect to Flask API.';
+      toast('Failed to fetch recommendations','error');
+    } finally { btn.classList.remove('loading'); }
+  }
+
+  function renderResults(data) {
+    const p=data.ml_predictions||{};
+    document.getElementById('predGrid').innerHTML=`
+      <div class="pred-card"><div class="pred-icon blue"><i data-lucide="dollar-sign" style="width:16px;height:16px"></i></div><div class="pred-value">$${(p.predicted_cost_usd||0).toFixed(3)}</div><div class="pred-label">Predicted Cost (USD/kg)</div></div>
+      <div class="pred-card"><div class="pred-icon orange"><i data-lucide="cloud" style="width:16px;height:16px"></i></div><div class="pred-value">${(p.predicted_co2_kg||0).toFixed(3)}</div><div class="pred-label">CO₂ Footprint (kg/kg)</div></div>
+      <div class="pred-card"><div class="pred-icon green"><i data-lucide="leaf" style="width:16px;height:16px"></i></div><div class="pred-value">${(p.environmental_score||0).toFixed(1)}</div><div class="pred-label">Environmental Score</div></div>
+      <div class="pred-card"><div class="pred-icon purple"><i data-lucide="trending-up" style="width:16px;height:16px"></i></div><div class="pred-value">${(p.overall_score||0).toFixed(1)}</div><div class="pred-label">Overall Score</div></div>
+    `;
+    const recs=data.top_recommendations||[];
+    document.getElementById('recGrid').innerHTML=recs.length?recs.map((m,i)=>`
+      <div class="rec-card">
+        <div class="rec-rank">#${i+1} Recommended</div>
+        <div class="rec-name">${m.material_name||'—'}</div>
+        <div class="rec-type">${m.material_type||'—'} · ${m.source_type||'—'}</div>
+        <div class="rec-metrics">
+          <div class="rec-metric"><div class="rec-metric-label">Biodeg. Score</div><div class="rec-metric-val">${m.biodegradability_score||'—'}%</div></div>
+          <div class="rec-metric"><div class="rec-metric-label">CO₂ Emission</div><div class="rec-metric-val">${m.co2_emission_score||'—'}</div></div>
+          <div class="rec-metric"><div class="rec-metric-label">Cost/kg</div><div class="rec-metric-val">$${m.cost_per_kg_usd||'—'}</div></div>
+          <div class="rec-metric"><div class="rec-metric-label">Recyclability</div><div class="rec-metric-val">${m.recyclability_percentage||'—'}%</div></div>
+        </div>
+      </div>`)
+      .join('')
+    :`<div class="empty-state"><i data-lucide="search-x"></i><h3>No matches found</h3><p>Try adjusting the parameters above.</p></div>`;
+    document.getElementById('resultsSection').classList.add('visible');
+    lucide.createIcons();
+  }
+
+  function resetForm(){
+    document.getElementById('recommendForm').reset();
+    ['strength_val','biodeg_val','recycle_val','moist_val'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(id==='biodeg_val'||id==='recycle_val') el.textContent='—%';
+      else el.textContent='—';
+    });
+    document.getElementById('strength_val').textContent='6';
+    document.getElementById('biodeg_val').textContent='70%';
+    document.getElementById('recycle_val').textContent='65%';
+    document.getElementById('moist_val').textContent='5';
+    document.getElementById('resultsSection').classList.remove('visible');
+    document.getElementById('recommendError').classList.remove('visible');
+  }
+
+  /* ── Materials ──────────────────────────────────────────── */
+  async function loadMaterials() {
+    document.getElementById('matTableBody').innerHTML='<tr><td colspan="10"><div class="skeleton skeleton-row"></div><div class="skeleton skeleton-row"></div><div class="skeleton skeleton-row"></div></td></tr>';
+    try {
+      const res=await fetch(API_BASE+'/api/materials',{signal:AbortSignal.timeout(10000)});
+      const data=await res.json();
+      allMaterials=data.data||[];
+      renderMaterialsTable(allMaterials);
+    } catch {
+      document.getElementById('matTableBody').innerHTML='<tr><td colspan="10" style="text-align:center;padding:var(--space-8);color:var(--color-text-muted)">⚠ Could not load materials. Is the Flask API running?</td></tr>';
+    }
+  }
+
+  function renderMaterialsTable(rows) {
+    const typeBadge={
+      'Bioplastic':'badge-green','Paper/Fiber':'badge-blue','Mycelium':'badge-purple',
+      'Cellulose':'badge-gray','Recycled Plastic':'badge-orange','Seaweed':'badge-green','Agricultural Waste':'badge-orange'
+    };
+    document.getElementById('matTableBody').innerHTML=rows.length?rows.map(m=>`
+      <tr>
+        <td style="color:var(--color-text-faint);font-size:var(--text-xs)">${m.material_id||'—'}</td>
+        <td style="font-weight:600">${m.material_name||'—'}</td>
+        <td><span class="badge ${typeBadge[m.material_type]||'badge-gray'}">${m.material_type||'—'}</span></td>
+        <td>${m.strength_rating||'—'}/10</td>
+        <td>${m.biodegradability_score||'—'}%</td>
+        <td>${parseFloat(m.co2_emission_score||0).toFixed(2)}</td>
+        <td>
+          <div class="score-bar-wrap">
+            <div class="score-bar"><div class="score-bar-fill" style="width:${m.recyclability_percentage||0}%"></div></div>
+            <span class="score-num">${m.recyclability_percentage||0}%</span>
+          </div>
+        </td>
+        <td>$${parseFloat(m.cost_per_kg_usd||0).toFixed(2)}</td>
+        <td>
+          <div class="score-bar-wrap">
+            <div class="score-bar"><div class="score-bar-fill" style="width:${m.material_suitability_score||0}%"></div></div>
+            <span class="score-num">${parseFloat(m.material_suitability_score||0).toFixed(0)}</span>
+          </div>
+        </td>
+        <td><span class="badge badge-gray">${m.source_type||'—'}</span></td>
+      </tr>`).join('')
+    :'<tr><td colspan="10"><div class="empty-state"><h3>No materials found</h3></div></td></tr>';
+    document.getElementById('matCount').textContent=`Showing ${rows.length} material${rows.length!==1?'s':''}`;
+  }
+
+  function filterMaterials() {
+    const q=(document.getElementById('matSearch').value||'').toLowerCase();
+    const t=(document.getElementById('matTypeFilter').value||'');
+    const s=(document.getElementById('matSrcFilter').value||'');
+    const filtered=allMaterials.filter(m=>{
+      const name=(m.material_name||'').toLowerCase();
+      return(!q||name.includes(q))&&(!t||m.material_type===t)&&(!s||m.source_type===s);
+    });
+    renderMaterialsTable(filtered);
+  }
+
+  /* ── Categories ─────────────────────────────────────────── */
+  async function loadCategories() {
+    try {
+      const res=await fetch(API_BASE+'/api/categories',{signal:AbortSignal.timeout(10000)});
+      const data=await res.json();
+      allCategories=data.data||[];const rows=allCategories;
+      const priColors={'High':'badge-green','Medium':'badge-blue','Low':'badge-gray'};
+      document.getElementById('catTableBody').innerHTML=rows.length?rows.map(c=>`
+        <tr>
+          <td style="font-weight:600">${c.category_name||'—'}</td>
+          <td>${c.typical_weight_range_kg||'—'}</td>
+          <td>${c.required_strength_min||'—'}</td>
+          <td>${c.required_moisture_resistance_min||'—'}</td>
+          <td>${c.required_biodegradability_min||'—'}%</td>
+          <td>${c.max_co2_threshold||'—'}</td>
+          <td><span class="badge ${priColors[c.sustainability_priority]||'badge-gray'}">${c.sustainability_priority||'—'}</span></td>
+          <td style="font-size:var(--text-xs);color:var(--color-text-muted);max-width:180px">${c.special_requirements||'—'}</td>
+        </tr>`).join('')
+      :'<tr><td colspan="8" style="text-align:center;padding:var(--space-8);color:var(--color-text-muted)">⚠ Could not load categories.</td></tr>';
+    } catch {
+      document.getElementById('catTableBody').innerHTML='<tr><td colspan="8" style="text-align:center;padding:var(--space-8);color:var(--color-text-muted)">⚠ Flask API not reachable.</td></tr>';
+    }
+  }
+
+  /* ── Dashboard ──────────────────────────────────────────── */
+  async function loadDashboard() {
+    try {
+      const res=await fetch(API_BASE+'/api/materials',{signal:AbortSignal.timeout(10000)});
+      const data=await res.json();
+      const mats=data.data||[];
+      if(!mats.length){toast('No materials data returned','error');return;}
+      buildKpis(mats);
+      buildCharts(mats);
+    } catch { toast('Dashboard: Flask API not reachable','error'); }
+  }
+
+  function buildKpis(mats) {
+    const avg=key=>mats.reduce((s,m)=>s+parseFloat(m[key]||0),0)/mats.length;
+    document.getElementById('kpiTotal').textContent=mats.length;
+    document.getElementById('kpiBiodeg').textContent=avg('biodegradability_score').toFixed(1)+'%';
+    document.getElementById('kpiCo2').textContent=avg('co2_emission_score').toFixed(2);
+    document.getElementById('kpiCost').textContent='$'+avg('cost_per_kg_usd').toFixed(2);
+    document.getElementById('kpiRecycle').textContent=avg('recyclability_percentage').toFixed(1)+'%';
+  }
+
+  function getCSS(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
+  function isDark(){return document.documentElement.getAttribute('data-theme')==='dark'}
+
+  function buildCharts(mats) {
+    const isDk=isDark();
+    const gridColor=isDk?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.06)';
+    const labelColor=isDk?'#737870':'#6b7669';
+    const palette=['#1a6b3a','#1a5f94','#b06a00','#6b3ab0','#b02020','#a07800','#c85a00'];
+    const paletteLight=['rgba(26,107,58,.75)','rgba(26,95,148,.75)','rgba(176,106,0,.75)','rgba(107,58,176,.75)','rgba(176,32,32,.75)'];
+
+    const defaults={
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:labelColor,font:{family:'Satoshi,Inter,sans-serif',size:11}}}},
+      scales:{x:{ticks:{color:labelColor,font:{size:11}},grid:{color:gridColor}},y:{ticks:{color:labelColor,font:{size:11}},grid:{color:gridColor}}}
+    };
+
+    // Group by type
+    const byType={};
+    mats.forEach(m=>{const t=m.material_type||'Other';if(!byType[t]){byType[t]={co2:0,biodeg:0,cost:0,cnt:0}}byType[t].co2+=parseFloat(m.co2_emission_score||0);byType[t].biodeg+=parseFloat(m.biodegradability_score||0);byType[t].cost+=parseFloat(m.cost_per_kg_usd||0);byType[t].cnt++});
+    const types=Object.keys(byType);
+
+    // Group by source
+    const bySrc={};
+    mats.forEach(m=>{const s=m.source_type||'Other';if(!bySrc[s]){bySrc[s]={recycle:0,cnt:0}}bySrc[s].recycle+=parseFloat(m.recyclability_percentage||0);bySrc[s].cnt++});
+
+    function mkChart(id,cfg){
+      if(chartInstances[id]){chartInstances[id].destroy();delete chartInstances[id];}
+      const ctx=document.getElementById(id);
+      if(!ctx)return;
+      chartInstances[id]=new Chart(ctx,cfg);
+    }
+
+    // 1. CO₂ by type (bar)
+    mkChart('co2ByTypeChart',{type:'bar',data:{labels:types,datasets:[{label:'Avg CO₂ (kg/kg)',data:types.map(t=>(byType[t].co2/byType[t].cnt).toFixed(3)),backgroundColor:paletteLight,borderColor:palette,borderWidth:1.5,borderRadius:4}]},options:{...defaults,plugins:{...defaults.plugins,legend:{display:false}}}});
+
+    // 2. Source distribution (doughnut)
+    const srcKeys=Object.keys(bySrc);
+    mkChart('sourceDistChart',{type:'doughnut',data:{labels:srcKeys,datasets:[{data:srcKeys.map(s=>bySrc[s].cnt),backgroundColor:palette,borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{color:labelColor,font:{family:'Satoshi,Inter,sans-serif',size:11},padding:12}}}}});
+
+    // 3. Biodeg distribution (histogram-ish bar)
+    const bins=[0,20,40,60,80,100];const binLabels=['0-20','21-40','41-60','61-80','81-100'];const binCounts=new Array(5).fill(0);
+    mats.forEach(m=>{const v=parseFloat(m.biodegradability_score||0);const i=Math.min(Math.floor(v/20),4);binCounts[i]++;});
+    mkChart('biodegDistChart',{type:'bar',data:{labels:binLabels,datasets:[{label:'Materials',data:binCounts,backgroundColor:'rgba(26,107,58,.7)',borderColor:'#1a6b3a',borderWidth:1.5,borderRadius:4}]},options:{...defaults,plugins:{...defaults.plugins,legend:{display:false}},scales:{x:{...defaults.scales.x,title:{display:true,text:'Biodeg Score Range',color:labelColor,font:{size:11}}},y:{...defaults.scales.y,title:{display:true,text:'Count',color:labelColor,font:{size:11}}}}}});
+
+    // 4. Cost vs Biodeg scatter (sample up to 50)
+    const sample=mats.slice(0,50);
+    mkChart('costVsBiodegChart',{type:'scatter',data:{datasets:[{label:'Materials',data:sample.map(m=>({x:parseFloat(m.biodegradability_score||0),y:parseFloat(m.cost_per_kg_usd||0)})),backgroundColor:'rgba(26,95,148,0.55)',pointRadius:5}]},options:{...defaults,scales:{x:{...defaults.scales.x,title:{display:true,text:'Biodeg Score (%)',color:labelColor,font:{size:11}}},y:{...defaults.scales.y,title:{display:true,text:'Cost (USD/kg)',color:labelColor,font:{size:11}}}},plugins:{...defaults.plugins,legend:{display:false}}}});
+
+    // 5. Recyclability by source (bar)
+    mkChart('recycleBySrcChart',{type:'bar',data:{labels:srcKeys,datasets:[{label:'Avg Recyclability (%)',data:srcKeys.map(s=>(bySrc[s].recycle/bySrc[s].cnt).toFixed(1)),backgroundColor:['rgba(26,95,148,.7)','rgba(26,107,58,.7)','rgba(176,106,0,.7)'],borderColor:['#1a5f94','#1a6b3a','#b06a00'],borderWidth:1.5,borderRadius:4}]},options:{...defaults,plugins:{...defaults.plugins,legend:{display:false}},scales:{...defaults.scales,y:{...defaults.scales.y,min:0,max:100}}}});
+
+    // 6. Strength distribution
+    const sBins={};for(let i=1;i<=10;i++)sBins[i]=0;
+    mats.forEach(m=>{const v=parseInt(m.strength_rating||0);if(sBins[v]!==undefined)sBins[v]++;});
+    mkChart('strengthDistChart',{type:'bar',data:{labels:Object.keys(sBins),datasets:[{label:'Materials',data:Object.values(sBins),backgroundColor:'rgba(107,58,176,.65)',borderColor:'#6b3ab0',borderWidth:1.5,borderRadius:4}]},options:{...defaults,plugins:{...defaults.plugins,legend:{display:false}},scales:{x:{...defaults.scales.x,title:{display:true,text:'Strength Rating',color:labelColor,font:{size:11}}},y:{...defaults.scales.y,title:{display:true,text:'Count',color:labelColor,font:{size:11}}}}}});
+
+    // 7. CO₂ vs Cost scatter by type
+    const typeColors={'Bioplastic':'rgba(26,107,58,.7)','Paper/Fiber':'rgba(26,95,148,.7)','Mycelium':'rgba(107,58,176,.7)','Seaweed':'rgba(176,106,0,.7)','Agricultural Waste':'rgba(176,32,32,.7)'};
+    const dsMap={};
+    mats.forEach(m=>{const t=m.material_type||'Other';if(!dsMap[t])dsMap[t]=[];dsMap[t].push({x:parseFloat(m.co2_emission_score||0),y:parseFloat(m.cost_per_kg_usd||0)});});
+    mkChart('co2CostScatterChart',{type:'scatter',data:{datasets:Object.keys(dsMap).map((t,i)=>({label:t,data:dsMap[t],backgroundColor:typeColors[t]||paletteLight[i%5],pointRadius:5}))},options:{...defaults,scales:{x:{...defaults.scales.x,title:{display:true,text:'CO₂ Emission (kg/kg)',color:labelColor,font:{size:11}}},y:{...defaults.scales.y,title:{display:true,text:'Cost (USD/kg)',color:labelColor,font:{size:11}}}}}});
+
+    // 8. Top 10 by suitability
+    const top10=[...mats].sort((a,b)=>parseFloat(b.material_suitability_score||0)-parseFloat(a.material_suitability_score||0)).slice(0,10);
+    mkChart('top10Chart',{type:'bar',data:{labels:top10.map(m=>m.material_name),datasets:[{label:'Suitability Score',data:top10.map(m=>parseFloat(m.material_suitability_score||0).toFixed(1)),backgroundColor:paletteLight,borderColor:palette,borderWidth:1.5,borderRadius:4}]},options:{...defaults,indexAxis:'y',plugins:{...defaults.plugins,legend:{display:false}},scales:{x:{...defaults.scales.x,min:0,max:1},y:{...defaults.scales.y}}}});
+
+    // 9. Top 10 CO₂
+    mkChart('top10Co2Chart',{type:'bar',data:{labels:top10.map(m=>m.material_name),datasets:[{label:'CO₂ Emission',data:top10.map(m=>parseFloat(m.co2_emission_score||0).toFixed(3)),backgroundColor:'rgba(176,106,0,.65)',borderColor:'#b06a00',borderWidth:1.5,borderRadius:4}]},options:{...defaults,indexAxis:'y',plugins:{...defaults.plugins,legend:{display:false}},scales:{x:{...defaults.scales.x},y:{...defaults.scales.y}}}});
+  }
+
+  /* ── Tab switching ──────────────────────────────────────── */
+  function switchTab(btn,panelId){
+    btn.closest('.tab-row').querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    btn.closest('.page').querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    document.getElementById(panelId).classList.add('active');
+  }
+
+  /* ── API Config ─────────────────────────────────────────── */
+  function saveApiConfig(){
+    const val=document.getElementById('apiBaseInput').value.replace(/\/$/,'');
+    API_BASE=val;
+    document.getElementById('apiBaseDisplay').textContent=val;
+    const el=document.getElementById('configTestResult');
+    el.textContent='Testing connection…';
+    fetch(val+'/api/health',{signal:AbortSignal.timeout(4000)})
+      .then(r=>r.ok?Promise.resolve():Promise.reject())
+      .then(()=>{el.style.color='var(--color-success)';el.textContent='✓ Connected successfully!';checkApiHealth();toast('API connected!','success')})
+      .catch(()=>{el.style.color='var(--color-error)';el.textContent='✗ Could not connect. Check if Flask is running.';toast('Connection failed','error')});
+  }
+
+
+  /* ── Export Utilities ───────────────────────────────────── */
+  function logExport(msg){
+    const el=document.getElementById('exportLog');
+    if(!el)return;
+    el.textContent+=msg+'\n';
+    el.scrollTop=el.scrollHeight;
+  }
+  function setProgress(pct,label=''){
+    const bar=document.getElementById('exportProgressBar');
+    const pctEl=document.getElementById('exportProgressPct');
+    const lbl=document.getElementById('exportProgressLabel');
+    const wrap=document.getElementById('exportProgress');
+    if(!bar)return;
+    wrap.style.display='block';
+    bar.style.width=pct+'%';
+    pctEl.textContent=pct+'%';
+    if(label)lbl.textContent=label;
+  }
+  function hideProgress(){const wrap=document.getElementById('exportProgress');if(wrap)wrap.style.display='none';}
+
+  function addExportHistory(name,type,size=''){
+    exportHistoryList.unshift({name,type,size,time:new Date().toLocaleTimeString()});
+    renderExportHistory();
+  }
+  function renderExportHistory(){
+    const el=document.getElementById('exportHistory');
+    if(!el)return;
+    if(!exportHistoryList.length){
+      el.innerHTML='<div class="empty-state" style="padding:var(--space-10) var(--space-8)"><i data-lucide="clock" style="width:32px;height:32px;margin-bottom:var(--space-3)"></i><h3>No exports yet</h3><p>Generated files will appear here.</p></div>';
+      lucide.createIcons();return;
+    }
+    const icons={PDF:'file-text',Excel:'table-2',CSV:'file-spreadsheet'};
+    el.innerHTML='<div class="report-history">'+exportHistoryList.map(e=>`
+      <div class="report-history-item">
+        <div class="report-history-left">
+          <i data-lucide="${icons[e.type]||'file'}"></i>
+          <div>
+            <div class="report-history-name">${e.name}</div>
+            <div class="report-history-time">${e.type} · ${e.time}${e.size?' · '+e.size:''}</div>
+          </div>
+        </div>
+        <span class="badge ${e.type==='PDF'?'badge-orange':e.type==='Excel'?'badge-green':'badge-blue'}">${e.type}</span>
+      </div>`).join('')+'</div>';
+    lucide.createIcons();
+  }
+
+  /* ── CSV Export ─────────────────────────────────────────── */
+  function exportCSV(){
+    if(!allMaterials.length){toast('Load Materials first (visit Materials page)','error');return;}
+    const fields=['material_id','material_name','material_type','source_type','strength_rating',
+      'weight_capacity_kg','biodegradability_score','co2_emission_score','recyclability_percentage',
+      'cost_per_kg_usd','decomposition_time_days','moisture_resistance','material_suitability_score'];
+    const header=fields.join(',');
+    const rows=allMaterials.map(m=>fields.map(f=>{
+      const v=m[f]??'';
+      return typeof v==='string'&&v.includes(',')? `"${v}"` : v;
+    }).join(','));
+    const csv=header+'\n'+rows.join('\n');
+    const blob=new Blob([csv],{type:'text/csv'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    a.download='EcoPackAI_Materials.csv';a.click();
+    URL.revokeObjectURL(a.href);
+    toast('CSV exported!','success');
+    addExportHistory('EcoPackAI_Materials.csv','CSV',allMaterials.length+' rows');
+  }
+
+  /* ── Excel Export ───────────────────────────────────────── */
+  async function exportExcel(scope='full'){
+    if(!window.XLSX){toast('SheetJS library not loaded yet, please wait','error');return;}
+    if(!allMaterials.length){
+      toast('Load Materials first (visit Materials or Dashboard page)','error');
+      if(scope==='materials') navigate(document.querySelector('[data-page="materials"]'),'materials');
+      return;
+    }
+    const XLSX=window.XLSX;
+    const wb=XLSX.utils.book_new();
+
+    /* Sheet 1: Materials */
+    const matRows=allMaterials.map(m=>({
+      'ID':m.material_id,'Name':m.material_name,'Type':m.material_type,'Source':m.source_type,
+      'Strength':m.strength_rating,'Weight Cap (kg)':m.weight_capacity_kg,
+      'Biodeg %':m.biodegradability_score,'CO₂ (kg/kg)':parseFloat(m.co2_emission_score||0).toFixed(3),
+      'Recyclability %':m.recyclability_percentage,'Cost USD/kg':parseFloat(m.cost_per_kg_usd||0).toFixed(2),
+      'Decomp Days':m.decomposition_time_days,'Moisture Res':m.moisture_resistance,
+      'Suitability Score':parseFloat(m.material_suitability_score||0).toFixed(1),
+      'Certifications':m.certifications||''
+    }));
+    const ws1=XLSX.utils.json_to_sheet(matRows);
+    ws1['!cols']=[{wch:10},{wch:28},{wch:18},{wch:18},{wch:9},{wch:14},{wch:10},
+      {wch:12},{wch:14},{wch:12},{wch:12},{wch:12},{wch:16},{wch:30}];
+    XLSX.utils.book_append_sheet(wb,ws1,'Materials Library');
+
+    if(scope==='full'){
+      /* Sheet 2: Categories */
+      let catRows=[];
+      if(allCategories.length){
+        catRows=allCategories.map(c=>({
+          'Category':c.category_name,'Weight Range':c.typical_weight_range_kg,
+          'Min Strength':c.required_strength_min,'Min Moisture':c.required_moisture_resistance_min,
+          'Min Biodeg %':c.required_biodegradability_min,'Max CO₂':c.max_co2_threshold,
+          'Sustainability Priority':c.sustainability_priority,'Special Requirements':c.special_requirements||''
+        }));
+      } else {
+        try {
+          const r=await fetch(API_BASE+'/api/categories',{signal:AbortSignal.timeout(5000)});
+          const d=await r.json(); allCategories=d.data||[];
+          catRows=allCategories.map(c=>({'Category':c.category_name,'Priority':c.sustainability_priority}));
+        } catch {}
+      }
+      if(catRows.length){
+        const ws2=XLSX.utils.json_to_sheet(catRows);
+        ws2['!cols']=[{wch:24},{wch:16},{wch:12},{wch:13},{wch:12},{wch:10},{wch:22},{wch:40}];
+        XLSX.utils.book_append_sheet(wb,ws2,'Product Categories');
+      }
+
+      /* Sheet 3: Summary Stats */
+      const byType={};
+      allMaterials.forEach(m=>{
+        const t=m.material_type||'Other';
+        if(!byType[t])byType[t]={count:0,co2:0,biodeg:0,cost:0,recycle:0};
+        byType[t].count++;byType[t].co2+=parseFloat(m.co2_emission_score||0);
+        byType[t].biodeg+=parseFloat(m.biodegradability_score||0);
+        byType[t].cost+=parseFloat(m.cost_per_kg_usd||0);
+        byType[t].recycle+=parseFloat(m.recyclability_percentage||0);
+      });
+      const sumRows=Object.entries(byType).map(([type,d])=>({
+        'Material Type':type,'Count':d.count,
+        'Avg CO₂ (kg/kg)':(d.co2/d.count).toFixed(3),
+        'Avg Biodeg %':(d.biodeg/d.count).toFixed(1),
+        'Avg Cost (USD/kg)':(d.cost/d.count).toFixed(2),
+        'Avg Recyclability %':(d.recycle/d.count).toFixed(1)
+      }));
+      const ws3=XLSX.utils.json_to_sheet(sumRows);
+      ws3['!cols']=[{wch:22},{wch:8},{wch:16},{wch:14},{wch:18},{wch:20}];
+      XLSX.utils.book_append_sheet(wb,ws3,'Sustainability Summary');
+    }
+
+    const fname=scope==='full'?'EcoPackAI_Full_Export.xlsx':'EcoPackAI_Materials.xlsx';
+    XLSX.writeFile(wb,fname);
+    toast('Excel file exported!','success');
+    addExportHistory(fname,'Excel',allMaterials.length+' materials');
+  }
+
+  /* ── Dashboard PDF Snapshot ─────────────────────────────── */
+  async function exportDashboardPDF(){
+    const btn=document.getElementById('dashPdfBtn')||document.getElementById('dashSnapBtn');
+    if(btn)btn.classList.add('loading');
+    if(!window.jspdf||!window.html2canvas){toast('PDF libraries still loading, try again in a second','error');if(btn)btn.classList.remove('loading');return;}
+    const chartIds=['co2ByTypeChart','sourceDistChart','biodegDistChart','costVsBiodegChart',
+      'recycleBySrcChart','strengthDistChart','co2CostScatterChart','top10Chart','top10Co2Chart'];
+    const titles=['CO₂ Emission by Material Type','Source Type Distribution',
+      'Biodegradability Distribution','Cost vs Biodegradability',
+      'Recyclability by Source','Strength Rating Distribution',
+      'CO₂ vs Cost Scatter','Top 10 by Suitability','Top 10 CO₂ Footprint'];
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+    const W=doc.internal.pageSize.getWidth();
+    const H=doc.internal.pageSize.getHeight();
+
+    // Cover
+    doc.setFillColor(26,107,58);doc.rect(0,0,W,18,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(14);doc.setTextColor(255,255,255);
+    doc.text('EcoPackAI — BI Dashboard Report',12,12);
+    doc.setFontSize(9);doc.setFont('helvetica','normal');
+    doc.text('Generated: '+new Date().toLocaleString(),W-70,12);
+    doc.setTextColor(40,40,40);
+
+    let added=0;
+    for(let i=0;i<chartIds.length;i++){
+      const canvas=document.getElementById(chartIds[i]);
+      if(!canvas)continue;
+      try{
+        const img=canvas.toDataURL('image/png');
+        const col=added%2;const row=Math.floor(added/2);
+        const x=col*(W/2)+5; const y=22+row*(H-26)/2.2;
+        const cw=W/2-10; const ch=(H-28)/2.2-4;
+        doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(60,60,60);
+        doc.text(titles[i],x,y-1);
+        doc.addImage(img,'PNG',x,y,cw,ch);
+        if(added%4===3&&i<chartIds.length-1){
+          doc.addPage();
+          doc.setFillColor(26,107,58);doc.rect(0,0,W,18,'F');
+          doc.setFont('helvetica','bold');doc.setFontSize(14);doc.setTextColor(255,255,255);
+          doc.text('EcoPackAI — BI Dashboard Report (cont.)',12,12);
+          doc.setTextColor(40,40,40);
+        }
+        added++;
+      } catch(e){console.warn('chart skip',chartIds[i],e)}
+    }
+    doc.save('EcoPackAI_Dashboard_Charts.pdf');
+    if(btn)btn.classList.remove('loading');
+    toast('Dashboard PDF exported!','success');
+    addExportHistory('EcoPackAI_Dashboard_Charts.pdf','PDF',added+' charts');
+    if(document.getElementById('page-reports').classList.contains('active'))renderExportHistory();
+  }
+
+  /* ── Full Sustainability PDF ─────────────────────────────── */
+  async function exportFullPDF(){
+    const btn=document.getElementById('pdfFullBtn');
+    if(btn)btn.classList.add('loading');
+    if(!window.jspdf){toast('jsPDF library not loaded yet','error');if(btn)btn.classList.remove('loading');return;}
+    if(!allMaterials.length){
+      toast('Load data first: visit Materials or Dashboard page','error');
+      if(btn)btn.classList.remove('loading');return;
+    }
+    setProgress(5,'Preparing report…');logExport('[1/6] Initializing PDF engine…');
+
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const W=doc.internal.pageSize.getWidth();
+    const H=doc.internal.pageSize.getHeight();
+    const primary=[26,107,58]; const dark=[28,35,24]; const muted=[107,118,105];
+    const PAD=14;
+
+    // ── Page 1: Cover ──────────────────────────────────────────
+    logExport('[2/6] Building cover page…');setProgress(15,'Cover page…');
+    doc.setFillColor(...primary);doc.rect(0,0,W,60,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(28);doc.setTextColor(255,255,255);
+    doc.text('EcoPackAI',PAD,32);
+    doc.setFontSize(13);doc.setFont('helvetica','normal');
+    doc.text('Sustainability Report',PAD,44);
+    doc.setFontSize(9);doc.text('AI-Powered Eco-Friendly Packaging Intelligence',PAD,54);
+    doc.setTextColor(...dark);
+    doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(...muted);
+    doc.text('Generated on '+new Date().toLocaleDateString('en-IN',{year:'numeric',month:'long',day:'numeric'}),PAD,74);
+    doc.text('Data Source: EcoPackAI PostgreSQL Database',PAD,81);
+    doc.text('Classification: Internal Report · Milestone 4 — Module 7',PAD,88);
+
+    // KPI highlights on cover
+    const avg=key=>allMaterials.reduce((s,m)=>s+parseFloat(m[key]||0),0)/allMaterials.length;
+    const kpis=[
+      {label:'Total Materials',value:String(allMaterials.length)},
+      {label:'Avg Biodegradability',value:avg('biodegradability_score').toFixed(1)+'%'},
+      {label:'Avg CO₂ Emission',value:avg('co2_emission_score').toFixed(3)+' kg/kg'},
+      {label:'Avg Cost / kg',value:'$'+avg('cost_per_kg_usd').toFixed(2)},
+      {label:'Avg Recyclability',value:avg('recyclability_percentage').toFixed(1)+'%'},
+    ];
+    let kx=PAD; const ky=105; const kw=(W-PAD*2-16)/5;
+    doc.setFillColor(243,246,241);doc.roundedRect(PAD,ky-6,W-PAD*2,32,3,3,'F');
+    kpis.forEach((k,i)=>{
+      doc.setFont('helvetica','bold');doc.setFontSize(14);doc.setTextColor(...primary);
+      doc.text(k.value,kx+kw/2,ky+10,{align:'center'});
+      doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...muted);
+      doc.text(k.label,kx+kw/2,ky+17,{align:'center'});
+      kx+=kw+4;
+    });
+
+    setProgress(30,'KPI Summary…');
+
+    // ── Page 2: Materials Table ─────────────────────────────────
+    logExport('[3/6] Building materials table…');setProgress(45,'Materials table…');
+    doc.addPage();
+    doc.setFillColor(...primary);doc.rect(0,0,W,14,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(255,255,255);
+    doc.text('Top 20 Eco-Friendly Materials by Suitability Score',PAD,9.5);
+
+    const top20=[...allMaterials].sort((a,b)=>parseFloat(b.material_suitability_score||0)-parseFloat(a.material_suitability_score||0)).slice(0,20);
+    const cols=['#','Material Name','Type','Source','Biodeg%','CO₂','Cost','Recycle%','Score'];
+    const cws=[8,52,26,22,14,12,12,14,12];
+    let ty=24;
+    // Header row
+    doc.setFillColor(237,240,235);doc.rect(PAD,ty-5,W-PAD*2,8,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(...dark);
+    let cx=PAD;
+    cols.forEach((c,i)=>{doc.text(c,cx+1,ty);cx+=cws[i];});
+    ty+=6;
+    // Data rows
+    doc.setFont('helvetica','normal');doc.setFontSize(7);
+    top20.forEach((m,idx)=>{
+      if(idx%2===0){doc.setFillColor(249,250,248);doc.rect(PAD,ty-4,W-PAD*2,7,'F');}
+      doc.setTextColor(...dark);cx=PAD;
+      const vals=[String(idx+1),m.material_name||'—',m.material_type||'—',m.source_type||'—',
+        (m.biodegradability_score||0)+'%',parseFloat(m.co2_emission_score||0).toFixed(2),
+        '$'+parseFloat(m.cost_per_kg_usd||0).toFixed(2),(m.recyclability_percentage||0)+'%',
+        parseFloat(m.material_suitability_score||0).toFixed(1)];
+      vals.forEach((v,i)=>{
+        const text=doc.splitTextToSize(String(v),cws[i]-2);
+        doc.text(text[0],cx+1,ty);cx+=cws[i];
+      });
+      ty+=7;
+    });
+
+    setProgress(65,'Source analysis…');
+
+    // ── Page 3: Source & Type Analysis ─────────────────────────
+    logExport('[4/6] Building type analysis…');
+    doc.addPage();
+    doc.setFillColor(...primary);doc.rect(0,0,W,14,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(255,255,255);
+    doc.text('Sustainability Analysis by Material Type',PAD,9.5);
+
+    const byType={};
+    allMaterials.forEach(m=>{
+      const t=m.material_type||'Other';
+      if(!byType[t])byType[t]={count:0,co2:0,biodeg:0,cost:0,recycle:0};
+      byType[t].count++;byType[t].co2+=parseFloat(m.co2_emission_score||0);
+      byType[t].biodeg+=parseFloat(m.biodegradability_score||0);
+      byType[t].cost+=parseFloat(m.cost_per_kg_usd||0);
+      byType[t].recycle+=parseFloat(m.recyclability_percentage||0);
+    });
+
+    const tcols=['Material Type','Count','Avg CO₂','Avg Biodeg%','Avg Cost','Avg Recycle%'];
+    const tcws=[40,14,22,22,20,22];
+    ty=24;
+    doc.setFillColor(237,240,235);doc.rect(PAD,ty-5,W-PAD*2,8,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...dark);
+    cx=PAD;tcols.forEach((c,i)=>{doc.text(c,cx+1,ty);cx+=tcws[i];});ty+=7;
+    doc.setFont('helvetica','normal');
+    Object.entries(byType).forEach(([type,d],idx)=>{
+      if(idx%2===0){doc.setFillColor(249,250,248);doc.rect(PAD,ty-4,W-PAD*2,7,'F');}
+      doc.setTextColor(...dark);cx=PAD;
+      const vals=[type,String(d.count),(d.co2/d.count).toFixed(3),(d.biodeg/d.count).toFixed(1)+'%',
+        '$'+(d.cost/d.count).toFixed(2),(d.recycle/d.count).toFixed(1)+'%'];
+      vals.forEach((v,i)=>{doc.text(v,cx+1,ty);cx+=tcws[i];});ty+=7;
+    });
+
+    // Capture overview charts if available
+    setProgress(80,'Capturing charts…');
+    logExport('[5/6] Capturing dashboard charts…');
+    const snapIds=['co2ByTypeChart','sourceDistChart','biodegDistChart','recycleBySrcChart'];
+    const snapTitles=['CO₂ by Type','Source Distribution','Biodegradability','Recyclability'];
+    let chartsAdded=0;
+    for(let i=0;i<snapIds.length;i++){
+      const cv=document.getElementById(snapIds[i]);
+      if(!cv)continue;
+      try{
+        if(chartsAdded===0){
+          doc.addPage();
+          doc.setFillColor(...primary);doc.rect(0,0,W,14,'F');
+          doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(255,255,255);
+          doc.text('BI Dashboard — Chart Snapshots',PAD,9.5);
+        }
+        const img=cv.toDataURL('image/png');
+        const col=chartsAdded%2; const row=Math.floor(chartsAdded/2);
+        const cx2=PAD+col*(W/2-PAD/2); const cy=22+row*72;
+        doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(...muted);
+        doc.text(snapTitles[i],cx2,cy-1);
+        doc.addImage(img,'PNG',cx2,cy,W/2-PAD,65);
+        chartsAdded++;
+      } catch {}
+    }
+
+    // ── Footer on all pages ─────────────────────────────────────
+    logExport('[6/6] Adding footers…');setProgress(93,'Finalizing…');
+    const totalPages=doc.internal.getNumberOfPages();
+    for(let p=1;p<=totalPages;p++){
+      doc.setPage(p);
+      doc.setDrawColor(...[212,209,202]);doc.line(PAD,H-8,W-PAD,H-8);
+      doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...muted);
+      doc.text('EcoPackAI Sustainability Report · Confidential',PAD,H-4);
+      doc.text('Page '+p+' of '+totalPages,W-PAD,H-4,{align:'right'});
+    }
+
+    setProgress(100,'Done!');
+    doc.save('EcoPackAI_Sustainability_Report.pdf');
+    toast('PDF report generated!','success');
+    addExportHistory('EcoPackAI_Sustainability_Report.pdf','PDF',allMaterials.length+' materials · '+totalPages+' pages');
+    if(document.getElementById('page-reports').classList.contains('active'))renderExportHistory();
+    setTimeout(()=>{hideProgress();if(btn)btn.classList.remove('loading');},1200);
+  }
+
+
+  /* ── Init ───────────────────────────────────────────────── */
+  document.addEventListener('DOMContentLoaded',()=>{
+    lucide.createIcons();
+    checkApiHealth();
+  });
+</script>
+</body>
+</html>
