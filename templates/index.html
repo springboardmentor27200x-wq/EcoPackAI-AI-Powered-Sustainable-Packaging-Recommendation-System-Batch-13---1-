@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>EcoPack AI</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Charts -->
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+<!-- PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<!-- Excel -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+body{
+background: linear-gradient(135deg,#e6fff2,#b3ffd9);
+min-height:100vh;
+font-family: 'Segoe UI', sans-serif;
+}
+
+.hero{
+text-align:center;
+margin-bottom:30px;
+animation: fadeIn 1s ease;
+}
+
+.main-card{
+background: rgba(255,255,255,0.85);
+border-radius:25px;
+padding:40px;
+box-shadow:0px 25px 50px rgba(0,0,0,0.2);
+animation: fadeInUp 1s ease;
+}
+
+.title{
+font-weight:800;
+color:#27ae60;
+}
+
+thead{
+background:#27ae60;
+color:white;
+}
+
+button{
+border-radius:12px !important;
+transition:0.3s;
+}
+
+button:hover{
+transform:scale(1.04);
+box-shadow:0 8px 20px rgba(0,0,0,0.2);
+}
+
+.kpi-card{
+background:white;
+padding:15px;
+border-radius:15px;
+box-shadow:0 10px 20px rgba(0,0,0,0.1);
+text-align:center;
+transition:0.3s;
+}
+
+.kpi-card:hover{
+transform:translateY(-5px);
+}
+
+#insights{
+background:#ecf9f1;
+padding:15px;
+border-radius:10px;
+margin-top:15px;
+}
+
+.fade-row{
+animation:fadeUp 0.5s ease forwards;
+}
+
+@keyframes fadeIn{
+from{opacity:0; transform:translateY(20px);}
+to{opacity:1; transform:translateY(0);}
+}
+
+@keyframes fadeInUp{
+from{opacity:0; transform:translateY(30px);}
+to{opacity:1; transform:translateY(0);}
+}
+
+@keyframes fadeUp{
+from{opacity:0; transform:translateY(10px);}
+to{opacity:1; transform:translateY(0);}
+}
+</style>
+</head>
+
+<body>
+
+<div class="container mt-4">
+
+<!-- HERO -->
+<div class="hero">
+<h1 class="title">🌱 EcoPack AI</h1>
+<p class="text-muted">Smart Sustainable Packaging Recommendation System</p>
+</div>
+
+<div class="row justify-content-center">
+<div class="col-md-10 main-card">
+
+<!-- INPUTS -->
+<label>Product Weight</label>
+<input id="weight" type="number" class="form-control" placeholder="Enter weight">
+
+<label class="mt-2">Fragility</label>
+<select id="fragility" class="form-control">
+<option value="1">Low</option>
+<option value="2">Medium</option>
+<option value="3">High</option>
+</select>
+
+<label class="mt-2">Moisture Sensitivity</label>
+<select id="moisture" class="form-control">
+<option value="1">Low</option>
+<option value="2">Medium</option>
+<option value="3">High</option>
+</select>
+
+<label class="mt-2">Number of Recommendations</label>
+<input id="topN" type="number" class="form-control" placeholder="e.g. 3">
+
+<label class="mt-2">Filter Type</label>
+<select id="filterType" class="form-control">
+<option value="all">All</option>
+<option value="eco">Eco-Friendly</option>
+<option value="cheap">Cheapest</option>
+<option value="strong">Strongest</option>
+</select>
+
+<!-- BUTTON -->
+<button onclick="getRecommendation()" class="btn btn-success w-100 mt-3">
+✨ Generate Recommendation
+</button>
+
+<div id="messageBox" class="text-danger text-center mt-2"></div>
+
+<!-- DOWNLOAD -->
+<div class="row mt-3">
+<div class="col-md-6">
+<button id="pdfBtn" onclick="downloadPDF()" class="btn btn-dark w-100" style="display:none;">
+📄 Download PDF
+</button>
+</div>
+<div class="col-md-6">
+<button id="excelBtn" onclick="downloadExcel()" class="btn btn-success w-100" style="display:none;">
+📊 Download Excel
+</button>
+</div>
+</div>
+
+<!-- KPI -->
+<div class="row mt-4">
+<div class="col-md-4">
+<div class="kpi-card">
+<h6>CO₂ Total</h6>
+<h3 id="kpiCo2">0</h3>
+</div>
+</div>
+
+<div class="col-md-4">
+<div class="kpi-card">
+<h6>Avg Cost</h6>
+<h3 id="kpiCost">0</h3>
+</div>
+</div>
+
+<div class="col-md-4">
+<div class="kpi-card">
+<h6>Reduction %</h6>
+<h3 id="kpiReduction">0%</h3>
+</div>
+</div>
+</div>
+
+<!-- TABLE -->
+<table class="table table-bordered mt-4 text-center">
+<thead>
+<tr>
+<th>Material</th>
+<th>Score</th>
+<th>Cost</th>
+<th>CO₂</th>
+</tr>
+</thead>
+<tbody id="resultTable"></tbody>
+</table>
+
+<!-- INSIGHTS -->
+<div id="insights"></div>
+
+<!-- CHARTS -->
+<div class="row mt-4">
+<div class="col-md-6"><div id="co2Chart"></div></div>
+<div class="col-md-6"><div id="costChart"></div></div>
+</div>
+
+<div class="mt-4"><div id="materialChart"></div></div>
+
+<!-- FOOTER -->
+<div class="text-center mt-5 text-muted">
+<p>EcoPack AI 🚀 | Sustainable Future</p>
+</div>
+
+</div>
+</div>
+</div>
+
+<!-- IMPORTANT -->
+<script src="/static/script.js"></script>
+
+</body>
+</html>
