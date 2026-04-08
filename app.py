@@ -1,157 +1,190 @@
 from flask import Flask, request, jsonify, render_template
-from flask_cors import CORS
 import joblib
-import psycopg2
+import numpy as np
+from flask_sqlalchemy import SQLAlchemy
 import os
 
 app = Flask(__name__)
-CORS(app)
 
-# ========================
-# LOAD MODELS
-# ========================
-print("Loading models...")
+# ================= DATABASE CONFIG =================
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
+    "DATABASE_URL",
+    "postgresql://postgres:123456789@localhost/ecopackai_db"
+)
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+db = SQLAlchemy(app)
+
+# ================= DATABASE MODEL =================
+class Prediction(db.Model):
+    __tablename__ = "predictions"
+
+    id = db.Column(db.Integer, primary_key=True)
+    weight = db.Column(db.Float)
+    strength = db.Column(db.Float)
+    cost = db.Column(db.Float)
+    co2 = db.Column(db.Float)
+
+# ================= LOAD MODELS =================
 cost_model = joblib.load("models/cost_model.pkl")
 co2_model = joblib.load("models/co2_model.pkl")
 scaler = joblib.load("models/scaler.pkl")
 
-print("Models Loaded ✅")
-
-
-# ========================
-# DB CONNECTION (CLOUD READY)
-# ========================
-def get_db_connection():
-    try:
-        conn = psycopg2.connect(
-            host=os.environ.get("DB_HOST", "localhost"),
-            database=os.environ.get("DB_NAME", "Ecopack"),
-            user=os.environ.get("DB_USER", "postgres"),
-            password=os.environ.get("DB_PASSWORD", "1234")
-        )
-        return conn
-    except Exception as e:
-        print("DB CONNECTION FAILED ❌", e)
-        return None
-
-
-# ========================
-# HOME ROUTE
-# ========================
+# ================= HOME =================
 @app.route("/")
 def home():
+    return "EcoPackAI Backend Running 🚀"
+
+# ================= UI =================
+@app.route("/ui")
+def ui():
     return render_template("index.html")
 
-
-# ========================
-# SECURITY
-# ========================
-API_KEY = "ecopack123"
-
-def check_key(req):
-    return req.headers.get("x-api-key") == API_KEY
-
-
-# ========================
-# RECOMMEND API
-# ========================
-@app.route("/recommend", methods=["POST"])
-def recommend():
-
-    print("🔥 API HIT")
-
+# ================= FEATURE PREPARATION =================
+def prepare_features(data):
     try:
-        # 🔐 API KEY CHECK
-        if not check_key(request):
-            return jsonify({
-                "status": "error",
-                "message": "Unauthorized"
-            }), 401
+        weight = float(data.get("weight", 0))
+        strength = float(data.get("strength", 0))
 
-        data = request.json
-        print("Incoming Data:", data)
+        # Optional inputs (fallback defaults)
+        weight_capacity = float(data.get("weight_capacity", 0.8))
+        biodegradability = float(data.get("biodegradability", 0.6))
+        recyclability = float(data.get("recyclability", 50))
 
-        weight = float(data.get("weight", 1))
-        fragility = int(data.get("fragility", 1))
-        moisture = int(data.get("moisture", 1))
+        if weight <= 0 or strength <= 0:
+            return None, "Weight and Strength must be positive"
 
-        conn = get_db_connection()
+        features = np.array([[
+            weight,
+            strength,
+            weight_capacity,
+            biodegradability,
+            recyclability
+        ]])
 
-        # ========================
-        # FETCH MATERIALS
-        # ========================
-        if conn:
-            cur = conn.cursor()
-            cur.execute("SELECT * FROM materials")
-            materials = cur.fetchall()
-            cur.close()
-            conn.close()
-            print("Materials from DB:", len(materials))
-        else:
-            materials = []
+        return features, None
 
-        # ========================
-        # DEMO BACKUP
-        # ========================
-        if len(materials) == 0:
-            print("Using DEMO DATA ⚠️")
-            materials = [
-                (1,"Corrugated Box",0.8,9,15,8,85,4),
-                (2,"Molded Fiber",0.7,8,12,9,80,3),
-                (3,"Bioplastic",0.6,7,10,7,75,5),
-                (4,"Recycled Paper",0.75,8.5,13,8.5,82,3.5),
-                (5,"Foam Insert",0.9,9.5,18,6,60,5)
-            ]
+    except Exception as e:
+        return None, str(e)
 
-        results = []
+# ================= PREDICT =================
+@app.route("/predict", methods=["POST"])
+def predict():
+    try:
+        data = request.get_json(force=True)
 
-        for m in materials:
+        features, error = prepare_features(data)
+        if error:
+            return jsonify({"error": error}), 400
 
-            material_name = m[1]
+        # SCALE INPUT
+        features_scaled = scaler.transform(features)
 
-            # CO2 Prediction
-            X_co2 = [[m[7], m[2], m[5], m[6]]]
-            X_co2 = scaler.transform(X_co2)
-            co2 = co2_model.predict(X_co2)[0]
+        # PREDICTION
+        cost = float(cost_model.predict(features_scaled)[0])
+        co2 = float(co2_model.predict(features_scaled)[0])
 
-            # Cost Prediction
-            X_cost = [[m[2], m[3], m[4], m[6], fragility]]
-            cost = cost_model.predict(X_cost)[0]
+        # SAVE TO DATABASE
+        new_prediction = Prediction(
+            weight=float(data.get("weight")),
+            strength=float(data.get("strength")),
+            cost=cost,
+            co2=co2
+        )
 
-            # Score Calculation
-            score = 1 / (abs(cost) + abs(co2) + 1e-6)
-
-            results.append({
-                "material": material_name,
-                "score": float(score),
-                "predicted_cost": float(cost),
-                "predicted_co2": float(co2)
-            })
-
-        # SORT RESULTS
-        results = sorted(results, key=lambda x: x["score"], reverse=True)
+        db.session.add(new_prediction)
+        db.session.commit()
 
         return jsonify({
             "status": "success",
-            "top_recommendations": results
+            "data": {
+                "predicted_cost": round(cost, 2),
+                "predicted_co2": round(co2, 2)
+            }
         })
 
     except Exception as e:
-        print("❌ ERROR:", str(e))
+        return jsonify({"error": str(e)}), 500
+
+
+# ================= HISTORY =================
+@app.route("/history", methods=["GET"])
+def history():
+    try:
+        records = Prediction.query.all()
+
+        data = [{
+            "weight": r.weight,
+            "strength": r.strength,
+            "cost": r.cost,
+            "co2": r.co2
+        } for r in records]
+
+        return jsonify({"status": "success", "data": data})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ================= RECOMMEND =================
+@app.route("/recommend", methods=["POST"])
+def recommend():
+    try:
+        data = request.get_json(force=True)
+
+        features, error = prepare_features(data)
+        if error:
+            return jsonify({"error": error}), 400
+
+        features_scaled = scaler.transform(features)
+
+        cost = float(cost_model.predict(features_scaled)[0])
+        co2 = float(co2_model.predict(features_scaled)[0])
+
+        # IMPROVED DECISION LOGIC
+        if co2 > 80000:
+            material = "Recycled Paper"
+        elif co2 > 40000:
+            material = "Bioplastic"
+        else:
+            material = "EcoComposite"
 
         return jsonify({
-            "status": "error",
-            "message": str(e)
+            "status": "success",
+            "data": {
+                "recommended_material": material,
+                "predicted_cost": round(cost, 2),
+                "predicted_co2": round(co2, 2)
+            }
         })
 
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-# ========================
-# RUN SERVER (DEPLOY READY)
-# ========================
+
+# ================= ECO SCORE =================
+@app.route("/score", methods=["POST"])
+def score():
+    try:
+        data = request.get_json(force=True)
+
+        cost = float(data.get("cost", 0))
+        co2 = float(data.get("co2", 0))
+
+        # ✅ FIXED ECO SCORE (BALANCED)
+        eco_score = max(0, 100 - (co2 / 3000 + cost * 0.3))
+
+        return jsonify({
+            "status": "success",
+            "data": {
+                "environment_score": round(eco_score, 2)
+            }
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ================= RUN =================
 if __name__ == "__main__":
-    print("🚀 Starting EcoPackAI Server...")
-
-    port = int(os.environ.get("PORT", 5000))
-
-    app.run(host="0.0.0.0", port=port)
+    app.run(debug=True)
